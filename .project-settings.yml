@@ -1,0 +1,24 @@
+extensions:
+  TemplateHaskell: true
+  MultiParamTypeClasses: true
+  TypeFamilies: true
+  OverloadedStrings: true
+cabal-file: project.cabal
+version: 1
+module-template: ! 'module MODULE_NAME where
+
+'
+modules:
+  Main(src/Main.hs):
+    target-type: web
+    filename: src/Main.hs
+  Foundation:
+    filename: src/Foundation.hs
+  Import:
+    filename: src/Import.hs
+  Handler.Home:
+    filename: src/Handler/Home.hs
+  Handler.Fib:
+    filename: src/Handler/Fib.hs
+  Handler.Markdown:
+    filename: src/Handler/Markdown.hs

@@ -1,0 +1,3 @@
+/ HomeR GET
+/fib/#Int FibR GET
+/markdown MarkdownR PUT
