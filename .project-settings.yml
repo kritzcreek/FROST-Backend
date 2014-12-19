@@ -7,22 +7,9 @@ extensions:
   QuasiQuotes: true
   TypeFamilies: true
   MultiParamTypeClasses: true
-environment: ghc-7.4.2-stable-13.09
+environment: ghc-7.8-stable-14.09
 cabal-file: project.cabal
-hidden-packages: ''
-modules:
-  Foundation:
-    filename: src/Foundation.hs
-  Handler.Home:
-    filename: src/Handler/Home.hs
-  Handler.Markdown:
-    filename: src/Handler/Markdown.hs
-  Import:
-    filename: src/Import.hs
-  Handler.Fib:
-    filename: src/Handler/Fib.hs
-  Main(src/Main.hs):
-    filename: src/Main.hs
 version: 1
 extra-packages: ''
 ghc-args: []
+excluded-modules: []
