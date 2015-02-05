@@ -1,46 +1,70 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Handler.Socket (openSpaceServer, handleSocketIOR, ServerState (..)) where
+{-# LANGUAGE QuasiQuotes       #-}
+{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE TypeFamilies      #-}
+module Handler.Socket where
 
-import Import
 
-import qualified Data.Text()
 
-import Application.Types
-import Application.Engine
+import           Application.Engine
+import           Application.Types
+import           Conduit
+import           Data.Aeson
+import           Data.ByteString.Lazy          (ByteString)
+import qualified Data.Conduit.List             as CL
+import           Data.Text                     (pack)
+import           Import
 
-import Control.Monad.Trans.Reader
-import Control.Applicative
-import Control.Monad.Trans.State
-import Control.Monad.State.Class
---import Debug.Trace
-import qualified Network.SocketIO as SocketIO
+import           Network.WebSockets.Connection (Connection)
+import           Yesod.WebSockets
 
-import qualified Control.Concurrent.STM as STM
+import           Control.Applicative
+import           Control.Concurrent.STM
+import           Control.Monad                 (forever)
+import           Control.Monad.Trans.Reader
 
-data ServerState = ServerState { appState :: STM.TVar AppState }
+getServerState :: Handler (TVar AppState)
+getServerState = do
+  App _ (SocketState sState _) <- getYesod
+  return sState
 
-readState :: ServerState -> ReaderT SocketIO.Socket IO AppState
-readState = liftIO . STM.atomically . STM.readTVar . appState
+getBroadcastChannel :: Handler (TChan ByteString)
+getBroadcastChannel = do
+  App _ (SocketState _ channel) <- getYesod
+  return channel
+
+parseAction :: Conduit ByteString (ReaderT Connection Handler) Action
+parseAction = CL.mapMaybe decode
+
+logAction :: Conduit Action (ReaderT Connection Handler) Action
+logAction = CL.mapM $ \ a -> do
+    $(logInfo) $ pack (show a)
+    return a
+
+applyAction :: Conduit Action (ReaderT Connection (HandlerT App IO)) Action
+applyAction = CL.mapM (\a -> do
+  serverState <- lift getServerState
+  liftIO $ atomically $ do
+    newState <- evalAction a <$> readTVar serverState
+    writeTVar serverState newState
+  return a
+  )
+
+encodeAction :: Conduit Action (ReaderT Connection Handler) ByteString
+encodeAction = CL.mapM $ return . encode
+
+actionConduit :: ConduitM ByteString ByteString (ReaderT Connection Handler) ()
+actionConduit = parseAction =$= logAction  =$= applyAction =$= encodeAction
+
+
+openSpaceApp :: WebSocketsT Handler ()
+openSpaceApp = do
+  writeChan <- lift getBroadcastChannel
+  readChan  <- liftIO $ atomically $ dupTChan writeChan
+  race_
+        (forever (liftIO $ atomically (readTChan readChan)) >>= (sendTextData :: ByteString -> WebSocketsT Handler ()))
+        (sourceWS $= actionConduit $$ mapM_C (\msg ->
+            (liftIO $ atomically $ writeTChan writeChan msg)))
 
 handleSocketIOR :: Handler ()
-handleSocketIOR = do
-  app <- getYesod
-  socketIoHandler app
-
-openSpaceServer servstate = do
-  SocketIO.on "message" $ \ a -> do
-    liftIO $ STM.atomically $ do
-      newState <- evalAction a <$> STM.readTVar (appState servstate)
-      STM.writeTVar (appState servstate) newState
-    SocketIO.broadcast "message" a
-  SocketIO.on "state" $ do
-    mystate <- readState servstate
-    SocketIO.emit "state" (generateActions mystate)
-  SocketIO.on "commit" $ do
-    mystate <- readState servstate
-    liftIO $ putStrLn "lol"
-    --result <- execute "select * from table" state
-    return mystate
-
+handleSocketIOR = webSockets openSpaceApp

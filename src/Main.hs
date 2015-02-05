@@ -1,34 +1,16 @@
+import           Application.Types
+import           Handler.Block
 import           Handler.Fib
 import           Handler.Home
 import           Handler.Markdown
-import           Handler.Socket(openSpaceServer, handleSocketIOR, ServerState (..))
 import           Handler.Room
-import           Handler.Block
+import           Handler.Socket
 import           Import
-import           Application.Types
 
-import Database.Persist.Postgresql
-import Control.Monad.Trans.Resource (runResourceT)
-import Control.Monad.Logger (runStderrLoggingT)
-import Control.Applicative
-import qualified Control.Concurrent.STM as STM
-
-import qualified Network.SocketIO as SocketIO
-import qualified Network.EngineIO.Yesod as EIO
-
-{-
-
-We've now defined all of our handler functions. The last step is
-create a dispatch function which will reference all of them. The
-mkYesodDispatch function does this, following the standard naming
-scheme we've used in our handler modules to get the appropriate
-function names.
-
-This function creates an instance of YesodDispatch. That instance is
-used by warpEnv to create an application that the Warp webserver is
-able to execute.
-
--}
+import           Control.Concurrent.STM
+import           Control.Monad.Logger         (runStderrLoggingT)
+import           Control.Monad.Trans.Resource (runResourceT)
+import           Database.Persist.Postgresql
 
 mkYesodDispatch "App" resourcesApp
 
@@ -40,11 +22,10 @@ connectionString = "host=localhost port=5432 user=test dbname=test password=test
 
 main :: IO ()
 main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCount $ \pool -> liftIO $ do
-    runResourceT $ flip runSqlPool pool $ do
-        runMigration migrateAll
-    state <- ServerState <$> STM.newTVarIO emptyState
-    app <- App pool <$> SocketIO.initialize EIO.yesodAPI (openSpaceServer state)
-    warpEnv app
+    runResourceT $ flip runSqlPool pool $ runMigration migrateAll
+    state   <- atomically $ newTVar emptyState
+    channel <- atomically $ newBroadcastTChan
+    warpEnv $ App pool (SocketState state channel)
 
 {-
 

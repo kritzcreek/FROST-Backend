@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
@@ -7,13 +8,12 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE DeriveGeneric              #-}
 module Application.Types where
 
-import           GHC.Generics
 import           Application.TopicTypes
+import qualified Data.Map               as M
+import           GHC.Generics
 import           Yesod
-import qualified Data.Map as M
 
 type Capacity = Int
 
@@ -53,7 +53,7 @@ instance FromJSON Topic
 -- | Actions |--
 ---------------
 data Slot = Slot
-  { room :: Room
+  { room  :: Room
   , block :: Block
   } deriving (Show, Eq, Ord, Generic)
 
@@ -81,9 +81,9 @@ instance ToJSON Action
 
 --type Timeslot = (Slot, Topic)
 
-data AppState = AppState { topics :: [Topic]
-                         , rooms :: [Room]
-                         , blocks :: [Block]
+data AppState = AppState { topics    :: [Topic]
+                         , rooms     :: [Room]
+                         , blocks    :: [Block]
                          , timeslots :: M.Map Slot Topic
                          }
               deriving(Show, Eq, Generic)
