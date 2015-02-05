@@ -20,4 +20,5 @@ version: 1
 extra-packages: ''
 ghc-args:
 - -Wall
-excluded-modules: []
+excluded-modules:
+- Setup.hs
