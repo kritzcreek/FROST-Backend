@@ -18,7 +18,7 @@ openConnectionCount :: Int
 openConnectionCount = 10
 
 connectionString :: ConnectionString
-connectionString = "host=localhost port=5432 user=test dbname=test password=test"
+connectionString = "host=localhost port=5432 user=creek dbname=creek password=creek"
 
 main :: IO ()
 main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCount $ \pool -> liftIO $ do

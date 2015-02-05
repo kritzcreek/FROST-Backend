@@ -13,6 +13,7 @@ import           Data.Aeson
 import           Data.ByteString.Lazy          (ByteString)
 import qualified Data.Conduit.List             as CL
 import           Data.Text                     (pack)
+import           Debug.Trace
 import           Import
 
 import           Network.WebSockets.Connection (Connection)
@@ -32,6 +33,9 @@ getBroadcastChannel :: Handler (TChan ByteString)
 getBroadcastChannel = do
   App _ (SocketState _ channel) <- getYesod
   return channel
+
+debugger :: Conduit ByteString (ReaderT Connection Handler) ByteString
+debugger = CL.mapM $ \ a -> return $ trace (show a) a
 
 parseAction :: Conduit ByteString (ReaderT Connection Handler) Action
 parseAction = CL.mapMaybe decode
@@ -53,7 +57,7 @@ encodeAction :: Conduit Action (ReaderT Connection Handler) ByteString
 encodeAction = CL.mapM $ return . encode
 
 actionConduit :: ConduitM ByteString ByteString (ReaderT Connection Handler) ()
-actionConduit = parseAction =$= logAction =$= applyAction =$= encodeAction
+actionConduit = debugger =$= parseAction =$= logAction =$= applyAction =$= encodeAction
 
 
 openSpaceApp :: WebSocketsT Handler ()
