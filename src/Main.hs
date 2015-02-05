@@ -24,7 +24,7 @@ main :: IO ()
 main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCount $ \pool -> liftIO $ do
     runResourceT $ flip runSqlPool pool $ runMigration migrateAll
     state   <- atomically $ newTVar emptyState
-    channel <- atomically $ newBroadcastTChan
+    channel <- atomically newBroadcastTChan
     warpEnv $ App pool (SocketState state channel)
 
 {-

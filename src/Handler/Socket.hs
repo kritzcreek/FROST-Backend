@@ -42,19 +42,18 @@ logAction = CL.mapM $ \ a -> do
     return a
 
 applyAction :: Conduit Action (ReaderT Connection (HandlerT App IO)) Action
-applyAction = CL.mapM (\a -> do
+applyAction = CL.mapM $ \ a -> do
   serverState <- lift getServerState
   liftIO $ atomically $ do
     newState <- evalAction a <$> readTVar serverState
     writeTVar serverState newState
   return a
-  )
 
 encodeAction :: Conduit Action (ReaderT Connection Handler) ByteString
 encodeAction = CL.mapM $ return . encode
 
 actionConduit :: ConduitM ByteString ByteString (ReaderT Connection Handler) ()
-actionConduit = parseAction =$= logAction  =$= applyAction =$= encodeAction
+actionConduit = parseAction =$= logAction =$= applyAction =$= encodeAction
 
 
 openSpaceApp :: WebSocketsT Handler ()
@@ -62,9 +61,10 @@ openSpaceApp = do
   writeChan <- lift getBroadcastChannel
   readChan  <- liftIO $ atomically $ dupTChan writeChan
   race_
-        (forever (liftIO $ atomically (readTChan readChan)) >>= (sendTextData :: ByteString -> WebSocketsT Handler ()))
-        (sourceWS $= actionConduit $$ mapM_C (\msg ->
-            (liftIO $ atomically $ writeTChan writeChan msg)))
+        (forever $ do
+          msg <- liftIO $ atomically (readTChan readChan)
+          sendTextData msg)
+        (sourceWS $= actionConduit $$ mapM_C (liftIO . atomically . writeTChan writeChan))
 
 handleSocketIOR :: Handler ()
 handleSocketIOR = webSockets openSpaceApp
