@@ -1,8 +1,8 @@
 module Foundation where
 
 import           Yesod
-import           Yesod.Default.Util
-import           Yesod.Form.Jquery
+import           Database.Persist.Postgresql
+import           Application.Types
 
 {-
 
@@ -15,7 +15,8 @@ our datatype is very simplistic. By convention, we call this datatype "App" with
 a single data constructor, also called "App".
 
 -}
-data App = App
+data App = App { conpool :: ConnectionPool,
+                 socketIoHandler :: HandlerT App IO () }
 
 {-
 
@@ -25,8 +26,16 @@ We're going to accept all of the defaults in our application, so our instance
 is pretty boring.
 
 -}
-instance Yesod App
+instance Yesod App where
+  cleanPath _ ["socket.io", ""] = Right ["socket.io"]
+  cleanPath _ p = Right p
 
+instance YesodPersist App where
+    type YesodPersistBackend App = SqlBackend
+
+    runDB action = do
+        App pool _ <- getYesod
+        runSqlPool action pool
 {-
 
 Every Yesod application has a set of routes associated with its foundation datatype.
@@ -49,8 +58,13 @@ Each route has a corresponding handler module, e.g. Handler.Home.
 Please see those modules for more details.
 
 -}
-mkYesodData "App" [parseRoutes|
-/         HomeR     GET
-/markdown MarkdownR PUT
-/fib/#Int FibR      GET
+mkYesodData "App" [parseRoutesNoCheck|
+/                HomeR     GET
+/markdown        MarkdownR PUT
+/fib/#Int        FibR      GET
+/rooms           RoomsR    GET POST
+/blocks          BlocksR   GET POST
+/rooms/#RoomId   RoomR     GET POST
+/blocks/#BlockId BlockR    GET POST
+/socket          SocketIOR
 |]

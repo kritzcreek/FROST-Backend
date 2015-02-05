@@ -1,7 +1,20 @@
 import           Handler.Fib
 import           Handler.Home
 import           Handler.Markdown
+import           Handler.Socket(openSpaceServer, handleSocketIOR, ServerState (..))
+import           Handler.Room
+import           Handler.Block
 import           Import
+import           Application.Types
+
+import Database.Persist.Postgresql
+import Control.Monad.Trans.Resource (runResourceT)
+import Control.Monad.Logger (runStderrLoggingT)
+import Control.Applicative
+import qualified Control.Concurrent.STM as STM
+
+import qualified Network.SocketIO as SocketIO
+import qualified Network.EngineIO.Yesod as EIO
 
 {-
 
@@ -19,8 +32,19 @@ able to execute.
 
 mkYesodDispatch "App" resourcesApp
 
+openConnectionCount :: Int
+openConnectionCount = 10
+
+connectionString :: ConnectionString
+connectionString = "host=localhost port=5432 user=test dbname=test password=test"
+
 main :: IO ()
-main = warpEnv App
+main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCount $ \pool -> liftIO $ do
+    runResourceT $ flip runSqlPool pool $ do
+        runMigration migrateAll
+    state <- ServerState <$> STM.newTVarIO emptyState
+    app <- App pool <$> SocketIO.initialize EIO.yesodAPI (openSpaceServer state)
+    warpEnv app
 
 {-
 
