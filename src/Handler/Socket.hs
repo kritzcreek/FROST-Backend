@@ -26,12 +26,12 @@ import           Control.Monad.Trans.Reader
 
 getServerState :: Handler (TVar AppState)
 getServerState = do
-  App _ (SocketState sState _) <- getYesod
+  App _ (SocketState sState _) _ <- getYesod
   return sState
 
 getBroadcastChannel :: Handler (TChan ByteString)
 getBroadcastChannel = do
-  App _ (SocketState _ channel) <- getYesod
+  App _ (SocketState _ channel) _ <- getYesod
   return channel
 
 debugger :: Conduit ByteString (ReaderT Connection Handler) ByteString
@@ -70,5 +70,5 @@ openSpaceApp = do
           sendTextData msg)
         (sourceWS $= actionConduit $$ mapM_C (liftIO . atomically . writeTChan writeChan))
 
-handleSocketIOR :: Handler ()
-handleSocketIOR = webSockets openSpaceApp
+handleSocketR :: Handler ()
+handleSocketR = webSockets openSpaceApp

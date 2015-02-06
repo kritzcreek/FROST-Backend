@@ -7,6 +7,8 @@ import           Handler.Room
 import           Handler.Socket
 import           Import
 
+
+import           Yesod.Static
 import           Control.Concurrent.STM
 import           Control.Monad.Logger         (runStderrLoggingT)
 import           Control.Monad.Trans.Resource (runResourceT)
@@ -25,7 +27,8 @@ main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCou
     runResourceT $ flip runSqlPool pool $ runMigration migrateAll
     state   <- atomically $ newTVar emptyState
     channel <- atomically newBroadcastTChan
-    warpEnv $ App pool (SocketState state channel)
+    s@(Static settings) <- static "static"
+    warpEnv $ App pool (SocketState state channel) s
 
 {-
 

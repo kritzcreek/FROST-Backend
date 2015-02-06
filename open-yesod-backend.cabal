@@ -81,6 +81,7 @@ executable open-yesod-backend
               , yesod-form
               , yesod-persistent
               , yesod-text-markdown
+              , yesod-static
               , conduit
               , conduit-combinators
               , aeson

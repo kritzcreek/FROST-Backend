@@ -5,10 +5,13 @@ import           Control.Concurrent.STM
 import           Data.ByteString.Lazy
 import           Database.Persist.Postgresql
 import           Yesod
+import           Yesod.Static
 
 data SocketState = SocketState { appState :: TVar AppState,  broadcastChan :: TChan ByteString }
 
-data App = App { conpool :: ConnectionPool, socketState :: SocketState }
+data App = App { conpool :: ConnectionPool, socketState :: SocketState, getStatic :: Static }
+
+staticFiles "static"
 
 {-
 
@@ -24,10 +27,12 @@ instance YesodPersist App where
     type YesodPersistBackend App = SqlBackend
 
     runDB action = do
-        App pool _ <- getYesod
+        App pool _ _ <- getYesod
         runSqlPool action pool
 
+
 mkYesodData "App" [parseRoutesNoCheck|
+/static          StaticR Static getStatic
 /                HomeR     GET
 /markdown        MarkdownR PUT
 /fib/#Int        FibR      GET
@@ -35,5 +40,5 @@ mkYesodData "App" [parseRoutesNoCheck|
 /blocks          BlocksR   GET POST
 /rooms/#RoomId   RoomR     GET POST
 /blocks/#BlockId BlockR    GET POST
-/socketIO        SocketIOR
+/socket          SocketR
 |]
