@@ -1,19 +1,17 @@
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes       #-}
-{-# LANGUAGE TemplateHaskell   #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
 module Handler.Socket where
 
 
 
 import           Application.Engine
 import           Application.Types
-import           Conduit
 import           Data.Aeson
-import           Data.ByteString.Lazy          (ByteString)
-import qualified Data.Conduit.List             as CL
-import qualified Data.Text                     as T
+import           Data.ByteString.Lazy   (ByteString)
+import qualified Data.Text              as T
 import           Debug.Trace
 import           Import
 
@@ -21,7 +19,7 @@ import           Yesod.WebSockets
 
 import           Control.Applicative
 import           Control.Concurrent.STM
-import           Control.Monad                 (forever)
+import           Control.Monad          (forever)
 
 getServerState :: Handler (TVar AppState)
 getServerState = do
@@ -33,52 +31,35 @@ getBroadcastChannel = do
   App _ (SocketState _ channel) _ <- getYesod
   return channel
 
-debugger :: Conduit ByteString (WebSocketsT Handler) ByteString
-debugger = CL.mapM $ \ a -> return $ trace (show a) a
+debugger :: ByteString -> WebSocketsT Handler ()
+debugger a = return $ trace (show a) ()
 
-parseAction :: Conduit ByteString (WebSocketsT Handler) Action
-parseAction = CL.mapMaybe decode
-
-parseCommand :: Conduit ByteString (WebSocketsT Handler) Command
-parseCommand = CL.mapMaybe decode
-
-commandResponse :: Conduit Command (WebSocketsT Handler) ByteString
-commandResponse = CL.mapM $ buildResponse
-  where
-    buildResponse RequestState = do
+commandResponse :: Command -> (WebSocketsT Handler) ByteString
+commandResponse RequestState = do
       serverState <- lift getServerState
       liftIO $ atomically $ do
         generateActions <$> readTVar serverState >>= return . encode
-    buildResponse (Echo s) = do
+commandResponse (Echo s) = do
       return $ encode s
 
-logAction :: Conduit Action (WebSocketsT Handler) Action
-logAction = CL.mapM $ \ a -> do
-    $(logInfo) $ T.pack (show a)
-    return a
+handleCommand :: Command -> WebSocketsT Handler ByteString
+handleCommand = commandResponse
 
-applyAction :: Conduit Action (WebSocketsT Handler) Action
-applyAction = CL.mapM $ \ a -> do
+logAction :: Action -> WebSocketsT Handler ()
+logAction a = $(logInfo) $ T.pack (show a)
+
+applyAction :: Action -> WebSocketsT Handler ()
+applyAction a = do
   serverState <- lift getServerState
   liftIO $ atomically $ do
     newState <- evalAction a <$> readTVar serverState
     writeTVar serverState newState
-  return a
-
-encodeAction :: Conduit Action (WebSocketsT Handler) ByteString
-encodeAction = CL.mapM $ return . encode
-
-actionConduit :: ConduitM ByteString ByteString (WebSocketsT Handler) ()
-actionConduit = debugger =$= parseAction =$= logAction =$= applyAction =$= encodeAction
-
---commandConduit :: ConduitM ByteString ByteString (WebSocketsT Handler) ()
---commandConduit = debugger =$= parseE =$= commandResponse
 
 handleAction :: Action -> WebSocketsT Handler ByteString
-handleAction a = return (encode a)
-
-handleCommand :: Command -> WebSocketsT Handler ByteString
-handleCommand c = return (encode c)
+handleAction a = do
+  logAction a
+  applyAction a
+  return (encode a)
 
 openSpaceApp :: WebSocketsT Handler ()
 openSpaceApp = do
@@ -90,13 +71,13 @@ openSpaceApp = do
           sendTextData msg)
         (forever $ do
           event <- receiveData
+          debugger event
           case decode event of
             Just (a :: Action) -> handleAction a >>= liftIO . atomically . writeTChan writeChan
             Nothing -> case decode event of
               Just (c :: Command) -> handleCommand c >>= sendTextData
               Nothing -> return ()
           )
-          --sourceWS $= actionConduit $$ mapM_C (liftIO . atomically . writeTChan writeChan))
 
 handleSocketR :: Handler ()
 handleSocketR = webSockets openSpaceApp
