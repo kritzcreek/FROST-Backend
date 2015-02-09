@@ -76,6 +76,7 @@ data Action = AddTopic Topic
             | DeleteBlock Block
             | AssignTopic Slot Topic
             | UnassignTopic Topic
+            | ReplayActions [Action]
             | ShowError String
             | NOP
             deriving (Show, Eq, Generic)

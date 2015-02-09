@@ -13,6 +13,7 @@ evalAction (AddBlock b) as      = addBlock b as
 evalAction (DeleteBlock b) as   = deleteBlock b as
 evalAction (AssignTopic s t) as = addTimeslot s t as
 evalAction (UnassignTopic t) as = as { timeslots = M.filter (/= t) (timeslots as) }
+evalAction (ReplayActions as) _ = foldl (flip evalAction) emptyState as
 evalAction (ShowError _) as     = as
 evalAction NOP as               = as
 

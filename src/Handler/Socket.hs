@@ -38,7 +38,8 @@ commandResponse :: Command -> (WebSocketsT Handler) ByteString
 commandResponse RequestState = do
       serverState <- lift getServerState
       liftIO $ atomically $ do
-        generateActions <$> readTVar serverState >>= return . encode
+        actions <- generateActions <$> readTVar serverState
+        return $ encode (ReplayActions actions)
 commandResponse (Echo s) = do
       return $ encode s
 
