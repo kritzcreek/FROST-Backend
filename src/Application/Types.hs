@@ -60,6 +60,14 @@ data Slot = Slot
 instance FromJSON Slot
 instance ToJSON Slot
 
+data Event = Action | Command
+
+data Command = RequestState | Echo String
+  deriving (Show, Eq, Generic)
+
+instance FromJSON Command
+instance ToJSON Command
+
 data Action = AddTopic Topic
             | DeleteTopic Topic
             | AddRoom Room
@@ -97,6 +105,9 @@ data AppState = AppState { topics    :: [Topic]
 emptyState :: AppState
 emptyState = AppState { topics = [], rooms = [], blocks = [], timeslots = M.empty }
 
+mySlot1 :: Slot
 mySlot1 = Slot (Room "Frankfurt" (Just 30)) (Block "Morgens" "9" "12")
+myTopic1 :: Topic
 myTopic1 = Topic "Ein Thema" Presentation
+myAction1 :: Action
 myAction1 = AssignTopic mySlot1 myTopic1

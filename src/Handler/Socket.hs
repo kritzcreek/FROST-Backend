@@ -12,7 +12,7 @@ import           Conduit
 import           Data.Aeson
 import           Data.ByteString.Lazy          (ByteString)
 import qualified Data.Conduit.List             as CL
-import           Data.Text                     (pack)
+import qualified Data.Text                     as T
 import           Debug.Trace
 import           Import
 
@@ -34,18 +34,31 @@ getBroadcastChannel = do
   App _ (SocketState _ channel) _ <- getYesod
   return channel
 
-debugger :: Conduit ByteString (ReaderT Connection Handler) ByteString
+debugger :: Conduit ByteString (WebSocketsT Handler) ByteString
 debugger = CL.mapM $ \ a -> return $ trace (show a) a
 
-parseAction :: Conduit ByteString (ReaderT Connection Handler) Action
+parseAction :: Conduit ByteString (WebSocketsT Handler) Action
 parseAction = CL.mapMaybe decode
 
-logAction :: Conduit Action (ReaderT Connection Handler) Action
+parseCommand :: Conduit ByteString (WebSocketsT Handler) Command
+parseCommand = CL.mapMaybe decode
+
+commandResponse :: Conduit Command (WebSocketsT Handler) ByteString
+commandResponse = CL.mapM $ buildResponse
+  where
+    buildResponse RequestState = do
+      serverState <- lift getServerState
+      liftIO $ atomically $ do
+        generateActions <$> readTVar serverState >>= return . encode
+    buildResponse (Echo s) = do
+      return $ encode s
+
+logAction :: Conduit Action (WebSocketsT Handler) Action
 logAction = CL.mapM $ \ a -> do
-    $(logInfo) $ pack (show a)
+    $(logInfo) $ T.pack (show a)
     return a
 
-applyAction :: Conduit Action (ReaderT Connection (HandlerT App IO)) Action
+applyAction :: Conduit Action (WebSocketsT Handler) Action
 applyAction = CL.mapM $ \ a -> do
   serverState <- lift getServerState
   liftIO $ atomically $ do
@@ -59,6 +72,8 @@ encodeAction = CL.mapM $ return . encode
 actionConduit :: ConduitM ByteString ByteString (ReaderT Connection Handler) ()
 actionConduit = debugger =$= parseAction =$= logAction =$= applyAction =$= encodeAction
 
+commandConduit :: ConduitM ByteString ByteString (ReaderT Connection Handler) ()
+commandConduit = debugger =$= parseCommand =$= commandResponse
 
 openSpaceApp :: WebSocketsT Handler ()
 openSpaceApp = do
