@@ -3,6 +3,7 @@
 #CLEAN
 rm -r ./static/
 mkdir ./static/
+touch ./static/.gitkeep
 
 #BUILD FRONTEND
 pushd ../reactive-psc/
