@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -16,13 +17,11 @@ import qualified Data.Text                     as T
 import           Debug.Trace
 import           Import
 
-import           Network.WebSockets.Connection (Connection)
 import           Yesod.WebSockets
 
 import           Control.Applicative
 import           Control.Concurrent.STM
 import           Control.Monad                 (forever)
-import           Control.Monad.Trans.Reader
 
 getServerState :: Handler (TVar AppState)
 getServerState = do
@@ -66,14 +65,20 @@ applyAction = CL.mapM $ \ a -> do
     writeTVar serverState newState
   return a
 
-encodeAction :: Conduit Action (ReaderT Connection Handler) ByteString
+encodeAction :: Conduit Action (WebSocketsT Handler) ByteString
 encodeAction = CL.mapM $ return . encode
 
-actionConduit :: ConduitM ByteString ByteString (ReaderT Connection Handler) ()
+actionConduit :: ConduitM ByteString ByteString (WebSocketsT Handler) ()
 actionConduit = debugger =$= parseAction =$= logAction =$= applyAction =$= encodeAction
 
-commandConduit :: ConduitM ByteString ByteString (ReaderT Connection Handler) ()
-commandConduit = debugger =$= parseCommand =$= commandResponse
+--commandConduit :: ConduitM ByteString ByteString (WebSocketsT Handler) ()
+--commandConduit = debugger =$= parseE =$= commandResponse
+
+handleAction :: Action -> WebSocketsT Handler ByteString
+handleAction a = return (encode a)
+
+handleCommand :: Command -> WebSocketsT Handler ByteString
+handleCommand c = return (encode c)
 
 openSpaceApp :: WebSocketsT Handler ()
 openSpaceApp = do
@@ -83,7 +88,15 @@ openSpaceApp = do
         (forever $ do
           msg <- liftIO $ atomically (readTChan readChan)
           sendTextData msg)
-        (sourceWS $= actionConduit $$ mapM_C (liftIO . atomically . writeTChan writeChan))
+        (forever $ do
+          event <- receiveData
+          case decode event of
+            Just (a :: Action) -> handleAction a >>= liftIO . atomically . writeTChan writeChan
+            Nothing -> case decode event of
+              Just (c :: Command) -> handleCommand c >>= sendTextData
+              Nothing -> return ()
+          )
+          --sourceWS $= actionConduit $$ mapM_C (liftIO . atomically . writeTChan writeChan))
 
 handleSocketR :: Handler ()
 handleSocketR = webSockets openSpaceApp
