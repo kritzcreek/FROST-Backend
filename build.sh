@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #CLEAN
-rm -r ./static/
+rm -rf ./static/
 mkdir ./static/
 touch ./static/.gitkeep
 
