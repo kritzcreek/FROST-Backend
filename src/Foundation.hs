@@ -32,10 +32,10 @@ instance YesodPersist App where
 
 
 mkYesodData "App" [parseRoutesNoCheck|
-/                StaticR Static getStatic
 /rooms           RoomsR    GET POST
 /blocks          BlocksR   GET POST
 /rooms/#RoomId   RoomR     GET POST
 /blocks/#BlockId BlockR    GET POST
 /socket          SocketR
+/                StaticR Static getStatic
 |]
