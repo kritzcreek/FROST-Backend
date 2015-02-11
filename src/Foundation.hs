@@ -32,10 +32,7 @@ instance YesodPersist App where
 
 
 mkYesodData "App" [parseRoutesNoCheck|
-/static          StaticR Static getStatic
-/                HomeR     GET
-/markdown        MarkdownR PUT
-/fib/#Int        FibR      GET
+/                StaticR Static getStatic
 /rooms           RoomsR    GET POST
 /blocks          BlocksR   GET POST
 /rooms/#RoomId   RoomR     GET POST

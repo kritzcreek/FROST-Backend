@@ -1,8 +1,5 @@
 import           Application.Types
 import           Handler.Block
-import           Handler.Fib
-import           Handler.Home
-import           Handler.Markdown
 import           Handler.Room
 import           Handler.Socket
 import           Import
