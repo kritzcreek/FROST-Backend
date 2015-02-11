@@ -78,12 +78,8 @@ executable open-yesod-backend
               , stm
               , yesod-core
               , yesod-websockets
-              , yesod-form
               , yesod-persistent
-              , yesod-text-markdown
               , yesod-static
-              , conduit
-              , conduit-combinators
               , aeson
               , persistent
               , persistent-postgresql
@@ -91,10 +87,9 @@ executable open-yesod-backend
               , yesod
               , websockets
               , text
-              , blaze-html
               , http-types
               , persistent-template
-              , markdown
+
   
   -- Directories containing source files.
   hs-source-dirs:      src
