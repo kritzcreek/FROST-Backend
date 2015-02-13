@@ -71,11 +71,11 @@ openSpaceApp = do
           msg <- liftIO $ atomically (readTChan readChan)
           sendTextData msg)
         (forever $ do
-          event <- receiveData
-          logSomething event
-          case decode event of
+          action <- receiveData
+          logSomething action
+          case decode action of
             Just (e :: Event) -> handleEvent e >>= liftIO . atomically . writeTChan writeChan
-            Nothing -> case decode event of
+            Nothing -> case decode action of
               Just (c :: Command) -> handleCommand c >>= sendTextData
               Nothing -> return ()
           )
