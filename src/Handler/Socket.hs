@@ -38,8 +38,8 @@ commandResponse :: Command -> (WebSocketsT Handler) ByteString
 commandResponse RequestState = do
       serverState <- lift getServerState
       liftIO $ atomically $ do
-        actions <- generateActions <$> readTVar serverState
-        return $ encode (ReplayActions actions)
+        events <- generateEvents <$> readTVar serverState
+        return $ encode (ReplayEvents events)
 commandResponse (Echo s) = do
       return $ encode s
 
@@ -49,18 +49,18 @@ handleCommand = commandResponse
 logSomething :: Show a => a -> WebSocketsT Handler ()
 logSomething a = $(logInfo) $ T.pack (show a)
 
-applyAction :: Action -> WebSocketsT Handler ()
-applyAction a = do
+applyEvent :: Event -> WebSocketsT Handler ()
+applyEvent e = do
   serverState <- lift getServerState
   liftIO $ atomically $ do
-    newState <- evalAction a <$> readTVar serverState
+    newState <- evalEvent e <$> readTVar serverState
     writeTVar serverState newState
 
-handleAction :: Action -> WebSocketsT Handler ByteString
-handleAction a = do
-  logSomething a
-  applyAction a
-  return (encode a)
+handleEvent :: Event -> WebSocketsT Handler ByteString
+handleEvent e = do
+  logSomething e
+  applyEvent e
+  return (encode e)
 
 openSpaceApp :: WebSocketsT Handler ()
 openSpaceApp = do
@@ -74,7 +74,7 @@ openSpaceApp = do
           event <- receiveData
           logSomething event
           case decode event of
-            Just (a :: Action) -> handleAction a >>= liftIO . atomically . writeTChan writeChan
+            Just (e :: Event) -> handleEvent e >>= liftIO . atomically . writeTChan writeChan
             Nothing -> case decode event of
               Just (c :: Command) -> handleCommand c >>= sendTextData
               Nothing -> return ()

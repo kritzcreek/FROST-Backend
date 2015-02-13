@@ -60,7 +60,7 @@ data Slot = Slot
 instance FromJSON Slot
 instance ToJSON Slot
 
-data Event = Action | Command
+data Action = Event | Command
 
 data Command = RequestState | Echo String
   deriving (Show, Eq, Generic)
@@ -68,7 +68,7 @@ data Command = RequestState | Echo String
 instance FromJSON Command
 instance ToJSON Command
 
-data Action = AddTopic Topic
+data Event = AddTopic Topic
             | DeleteTopic Topic
             | AddRoom Room
             | DeleteRoom Room
@@ -76,13 +76,13 @@ data Action = AddTopic Topic
             | DeleteBlock Block
             | AssignTopic Slot Topic
             | UnassignTopic Topic
-            | ReplayActions [Action]
+            | ReplayEvents [Event]
             | ShowError String
             | NOP
             deriving (Show, Eq, Generic)
 
-instance FromJSON Action
-instance ToJSON Action
+instance FromJSON Event
+instance ToJSON Event
 
 -------------------------
 -- | Entire AppState |--
@@ -114,8 +114,9 @@ mySlot :: Slot
 mySlot = Slot myRoom myBlock
 myTopic :: Topic
 myTopic = Topic "Ein Thema" Presentation
-myAction :: Action
-myAction = AssignTopic mySlot myTopic
+myEvent :: Event
+myEvent = AssignTopic mySlot myTopic
+myState :: AppState
 myState = AppState { topics = [myTopic],
                       rooms = [myRoom],
                       blocks = [myBlock],
