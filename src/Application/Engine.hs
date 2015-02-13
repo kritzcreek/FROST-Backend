@@ -4,17 +4,18 @@ import Application.Types
 import qualified Data.Map as M
 
 
-evalAction :: Action -> AppState -> AppState
-evalAction (AddTopic t) as      = addTopic t as
-evalAction (DeleteTopic t) as   = deleteTopic t as
-evalAction (AddRoom r) as       = addRoom r as
-evalAction (DeleteRoom r) as    = deleteRoom r as
-evalAction (AddBlock b) as      = addBlock b as
-evalAction (DeleteBlock b) as   = deleteBlock b as
-evalAction (AssignTopic s t) as = addTimeslot s t as
-evalAction (UnassignTopic t) as = as { timeslots = M.filter (/= t) (timeslots as) }
-evalAction (ShowError _) as     = as
-evalAction NOP as               = as
+evalEvent :: Event -> AppState -> AppState
+evalEvent (AddTopic t) as      = addTopic t as
+evalEvent (DeleteTopic t) as   = deleteTopic t as
+evalEvent (AddRoom r) as       = addRoom r as
+evalEvent (DeleteRoom r) as    = deleteRoom r as
+evalEvent (AddBlock b) as      = addBlock b as
+evalEvent (DeleteBlock b) as   = deleteBlock b as
+evalEvent (AssignTopic s t) as = addTimeslot s t as
+evalEvent (UnassignTopic t) as = as { timeslots = M.filter (/= t) (timeslots as) }
+evalEvent (ReplayEvents as) _ = foldl (flip evalEvent) emptyState as
+evalEvent (ShowError _) as     = as
+evalEvent NOP as               = as
 
 addTimeslot :: Slot -> Topic -> AppState -> AppState
 addTimeslot s t as = let topicslotFilter = M.filter (/= t)
@@ -48,8 +49,8 @@ deleteBlock b as = as { blocks = filter (/= b ) (blocks as)
                       , timeslots = M.fromList $ blockFilter $ M.toList (timeslots as)}
                       where blockFilter = filter (\(s, _) -> block s /= b)
 
-generateActions :: AppState -> [Action]
-generateActions as = concat [t, r, b, ts]
+generateEvents :: AppState -> [Event]
+generateEvents as = concat [t, r, b, ts]
   where t  = reverse $ map AddTopic (topics as)
         r  = reverse $ map AddRoom (rooms as)
         b  = reverse $ map AddBlock (blocks as)

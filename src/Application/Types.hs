@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GADTs                      #-}
@@ -7,13 +8,12 @@
 {-# LANGUAGE QuasiQuotes                #-}
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE DeriveGeneric              #-}
 module Application.Types where
 
-import           GHC.Generics
 import           Application.TopicTypes
+import qualified Data.Map               as M
+import           GHC.Generics
 import           Yesod
-import qualified Data.Map as M
 
 type Capacity = Int
 
@@ -53,14 +53,22 @@ instance FromJSON Topic
 -- | Actions |--
 ---------------
 data Slot = Slot
-  { room :: Room
+  { room  :: Room
   , block :: Block
   } deriving (Show, Eq, Ord, Generic)
 
 instance FromJSON Slot
 instance ToJSON Slot
 
-data Action = AddTopic Topic
+data Action = Event | Command
+
+data Command = RequestState | Echo String
+  deriving (Show, Eq, Generic)
+
+instance FromJSON Command
+instance ToJSON Command
+
+data Event = AddTopic Topic
             | DeleteTopic Topic
             | AddRoom Room
             | DeleteRoom Room
@@ -68,12 +76,13 @@ data Action = AddTopic Topic
             | DeleteBlock Block
             | AssignTopic Slot Topic
             | UnassignTopic Topic
+            | ReplayEvents [Event]
             | ShowError String
             | NOP
             deriving (Show, Eq, Generic)
 
-instance FromJSON Action
-instance ToJSON Action
+instance FromJSON Event
+instance ToJSON Event
 
 -------------------------
 -- | Entire AppState |--
@@ -81,9 +90,9 @@ instance ToJSON Action
 
 --type Timeslot = (Slot, Topic)
 
-data AppState = AppState { topics :: [Topic]
-                         , rooms :: [Room]
-                         , blocks :: [Block]
+data AppState = AppState { topics    :: [Topic]
+                         , rooms     :: [Room]
+                         , blocks    :: [Block]
                          , timeslots :: M.Map Slot Topic
                          }
               deriving(Show, Eq, Generic)
@@ -97,3 +106,18 @@ data AppState = AppState { topics :: [Topic]
 emptyState :: AppState
 emptyState = AppState { topics = [], rooms = [], blocks = [], timeslots = M.empty }
 
+myRoom :: Room
+myRoom = Room "Frankfurt" (Just 30)
+myBlock :: Block
+myBlock = Block "Morgens" "9" "12"
+mySlot :: Slot
+mySlot = Slot myRoom myBlock
+myTopic :: Topic
+myTopic = Topic "Ein Thema" Presentation
+myEvent :: Event
+myEvent = AssignTopic mySlot myTopic
+myState :: AppState
+myState = AppState { topics = [myTopic],
+                      rooms = [myRoom],
+                      blocks = [myBlock],
+                      timeslots = (M.insert mySlot myTopic M.empty)}

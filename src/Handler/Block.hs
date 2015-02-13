@@ -1,29 +1,29 @@
 module Handler.Block where
 
-import Import
-import Application.Types
-import Control.Applicative
-import Network.HTTP.Types
-import Data.Text(Text)
+import           Application.Types
+import           Control.Applicative
+import           Data.Text           (Text)
+import           Import
+import           Network.HTTP.Types
 
 getBlocksR :: Handler Value
 getBlocksR = do
-  blocks <- runDB $ selectList [] [] :: Handler [Entity Block]
-  return $ toJSON $ (\ (Entity _ v) -> v) <$> blocks
+  bs <- runDB $ selectList [] [] :: Handler [Entity Block]
+  return $ toJSON $ (\ (Entity _ v) -> v) <$> bs
 
 postBlocksR :: Handler Value
 postBlocksR = do
-  block <- requireJsonBody :: Handler Block
-  postId <- runDB $ insert block
-  return $ toJSON $ postId
+  b <- requireJsonBody :: Handler Block
+  postId <- runDB $ insert b
+  return $ toJSON postId
 
 getBlockR :: BlockId -> Handler Value
 getBlockR blockId = do
-  block <- runDB $ get404 blockId
-  return $ toJSON block
+  b <- runDB $ get404 blockId
+  return $ toJSON b
 
 postBlockR :: BlockId -> Handler ()
 postBlockR blockId = do
-  block <- requireJsonBody :: Handler Block
-  runDB $ replace blockId block
+  b <- requireJsonBody :: Handler Block
+  runDB $ replace blockId b
   sendResponseStatus status200 ("UPDATED" :: Text)

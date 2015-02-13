@@ -1,46 +1,81 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE QuasiQuotes         #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-module Handler.Socket (openSpaceServer, handleSocketIOR, ServerState (..)) where
+{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE TypeFamilies        #-}
+module Handler.Socket where
 
-import Import
+import           Application.Engine
+import           Application.Types
+import           Data.Aeson
+import           Data.ByteString.Lazy   (ByteString)
+import qualified Data.Text              as T
+import           Debug.Trace
+import           Import
 
-import qualified Data.Text()
+import           Yesod.WebSockets
 
-import Application.Types
-import Application.Engine
+import           Control.Applicative
+import           Control.Concurrent.STM
+import           Control.Monad          (forever)
 
-import Control.Monad.Trans.Reader
-import Control.Applicative
-import Control.Monad.Trans.State
-import Control.Monad.State.Class
---import Debug.Trace
-import qualified Network.SocketIO as SocketIO
+getServerState :: Handler (TVar AppState)
+getServerState = do
+  App _ (SocketState sState _) _ <- getYesod
+  return sState
 
-import qualified Control.Concurrent.STM as STM
+getBroadcastChannel :: Handler (TChan ByteString)
+getBroadcastChannel = do
+  App _ (SocketState _ channel) _ <- getYesod
+  return channel
 
-data ServerState = ServerState { appState :: STM.TVar AppState }
+debugger :: ByteString -> WebSocketsT Handler ()
+debugger a = return $ trace (show a) ()
 
-readState :: ServerState -> ReaderT SocketIO.Socket IO AppState
-readState = liftIO . STM.atomically . STM.readTVar . appState
+commandResponse :: Command -> (WebSocketsT Handler) ByteString
+commandResponse RequestState = do
+      serverState <- lift getServerState
+      liftIO $ atomically $ do
+        events <- generateEvents <$> readTVar serverState
+        return $ encode (ReplayEvents events)
+commandResponse (Echo s) = do
+      return $ encode s
 
-handleSocketIOR :: Handler ()
-handleSocketIOR = do
-  app <- getYesod
-  socketIoHandler app
+handleCommand :: Command -> WebSocketsT Handler ByteString
+handleCommand = commandResponse
 
-openSpaceServer servstate = do
-  SocketIO.on "message" $ \ a -> do
-    liftIO $ STM.atomically $ do
-      newState <- evalAction a <$> STM.readTVar (appState servstate)
-      STM.writeTVar (appState servstate) newState
-    SocketIO.broadcast "message" a
-  SocketIO.on "state" $ do
-    mystate <- readState servstate
-    SocketIO.emit "state" (generateActions mystate)
-  SocketIO.on "commit" $ do
-    mystate <- readState servstate
-    liftIO $ putStrLn "lol"
-    --result <- execute "select * from table" state
-    return mystate
+logSomething :: Show a => a -> WebSocketsT Handler ()
+logSomething a = $(logInfo) $ T.pack (show a)
 
+applyEvent :: Event -> WebSocketsT Handler ()
+applyEvent e = do
+  serverState <- lift getServerState
+  liftIO $ atomically $ do
+    newState <- evalEvent e <$> readTVar serverState
+    writeTVar serverState newState
+
+handleEvent :: Event -> WebSocketsT Handler ByteString
+handleEvent e = do
+  logSomething e
+  applyEvent e
+  return (encode e)
+
+openSpaceApp :: WebSocketsT Handler ()
+openSpaceApp = do
+  writeChan <- lift getBroadcastChannel
+  readChan  <- liftIO $ atomically $ dupTChan writeChan
+  race_
+        (forever $ do
+          msg <- liftIO $ atomically (readTChan readChan)
+          sendTextData msg)
+        (forever $ do
+          action <- receiveData
+          logSomething action
+          case decode action of
+            Just (e :: Event) -> handleEvent e >>= liftIO . atomically . writeTChan writeChan
+            Nothing -> case decode action of
+              Just (c :: Command) -> handleCommand c >>= sendTextData
+              Nothing -> return ())
+
+handleSocketR :: Handler ()
+handleSocketR = webSockets openSpaceApp
