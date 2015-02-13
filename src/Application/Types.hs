@@ -106,9 +106,17 @@ data AppState = AppState { topics    :: [Topic]
 emptyState :: AppState
 emptyState = AppState { topics = [], rooms = [], blocks = [], timeslots = M.empty }
 
-mySlot1 :: Slot
-mySlot1 = Slot (Room "Frankfurt" (Just 30)) (Block "Morgens" "9" "12")
-myTopic1 :: Topic
-myTopic1 = Topic "Ein Thema" Presentation
-myAction1 :: Action
-myAction1 = AssignTopic mySlot1 myTopic1
+myRoom :: Room
+myRoom = Room "Frankfurt" (Just 30)
+myBlock :: Block
+myBlock = Block "Morgens" "9" "12"
+mySlot :: Slot
+mySlot = Slot myRoom myBlock
+myTopic :: Topic
+myTopic = Topic "Ein Thema" Presentation
+myAction :: Action
+myAction = AssignTopic mySlot myTopic
+myState = AppState { topics = [myTopic],
+                      rooms = [myRoom],
+                      blocks = [myBlock],
+                      timeslots = (M.insert mySlot myTopic M.empty)}

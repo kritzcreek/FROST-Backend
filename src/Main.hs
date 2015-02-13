@@ -22,7 +22,7 @@ connectionString = "host=localhost port=5432 user=creek dbname=creek password=cr
 main :: IO ()
 main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCount $ \pool -> liftIO $ do
     runResourceT $ flip runSqlPool pool $ runMigration migrateAll
-    state   <- atomically $ newTVar emptyState
+    state   <- atomically $ newTVar myState
     channel <- atomically newBroadcastTChan
     s@(Static settings) <- static "static"
     warpEnv $ App pool (SocketState state channel) s
