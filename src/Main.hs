@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 import           Application.Types
 import           Handler.Block
 import           Handler.Room
@@ -24,7 +25,7 @@ main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCou
     runResourceT $ flip runSqlPool pool $ runMigration migrateAll
     state   <- atomically $ newTVar myState
     channel <- atomically newBroadcastTChan
-    s@(Static settings) <- static "static"
+    s <- static "static"
     warpEnv $ App pool (SocketState state channel) s
 
 {-

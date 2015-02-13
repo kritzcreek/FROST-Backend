@@ -5,8 +5,6 @@
 {-# LANGUAGE TypeFamilies        #-}
 module Handler.Socket where
 
-
-
 import           Application.Engine
 import           Application.Types
 import           Data.Aeson
@@ -77,8 +75,7 @@ openSpaceApp = do
             Just (e :: Event) -> handleEvent e >>= liftIO . atomically . writeTChan writeChan
             Nothing -> case decode action of
               Just (c :: Command) -> handleCommand c >>= sendTextData
-              Nothing -> return ()
-          )
+              Nothing -> return ())
 
 handleSocketR :: Handler ()
 handleSocketR = webSockets openSpaceApp
