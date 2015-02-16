@@ -49,6 +49,9 @@ deleteBlock b as = as { blocks = filter (/= b ) (blocks as)
                       , timeslots = M.fromList $ blockFilter $ M.toList (timeslots as)}
                       where blockFilter = filter (\(s, _) -> block s /= b)
 
+replayEvents :: AppState -> [Event] -> AppState
+replayEvents = foldl (flip evalEvent)
+
 generateEvents :: AppState -> [Event]
 generateEvents as = concat [t, r, b, ts]
   where t  = reverse $ map AddTopic (topics as)

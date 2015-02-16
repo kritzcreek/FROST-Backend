@@ -40,6 +40,8 @@ Timeslots
     topicId TopicId
     Timeslot roomId blockId
     deriving Show Eq
+Snapshot
+    events [Event]
 |]
 
 instance ToJSON Room
@@ -64,27 +66,29 @@ instance ToJSON Slot
 
 data Action = Event | Command
 
-data Command = RequestState | Echo String
+data Command = RequestState | PersistSnapshot | LoadSnapshot SnapshotId | Echo String
   deriving (Show, Eq, Generic)
 
 instance FromJSON Command
 instance ToJSON Command
 
 data Event = AddTopic Topic
-            | DeleteTopic Topic
-            | AddRoom Room
-            | DeleteRoom Room
-            | AddBlock Block
-            | DeleteBlock Block
-            | AssignTopic Slot Topic
-            | UnassignTopic Topic
-            | ReplayEvents [Event]
-            | ShowError String
-            | NOP
-            deriving (Show, Eq, Generic)
+           | DeleteTopic Topic
+           | AddRoom Room
+           | DeleteRoom Room
+           | AddBlock Block
+           | DeleteBlock Block
+           | AssignTopic Slot Topic
+           | UnassignTopic Topic
+           | ReplayEvents [Event]
+           | ShowError String
+           | NOP
+           deriving (Show, Eq, Generic)
 
 instance FromJSON Event
 instance ToJSON Event
+
+derivePersistFieldJSON "Event"
 
 -------------------------
 -- | Entire AppState |--
@@ -122,4 +126,4 @@ myState :: AppState
 myState = AppState { topics = [myTopic],
                       rooms = [myRoom],
                       blocks = [myBlock],
-                      timeslots = (M.insert mySlot myTopic M.empty)}
+                      timeslots = M.insert mySlot myTopic M.empty}
