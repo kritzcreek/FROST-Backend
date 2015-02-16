@@ -15,8 +15,8 @@ import qualified Data.Map               as M
 import           GHC.Generics
 import           Yesod
 
-type Capacity = Int
 
+type Capacity = Int
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Room
@@ -25,8 +25,10 @@ Room
     deriving Show Eq Ord Generic
 Block
     description String
-    start String
-    end String
+    startHours Int
+    startMinutes Int
+    endHours Int
+    endMinutes Int
     deriving Show Eq Ord Generic
 Topic
     description String
@@ -109,7 +111,7 @@ emptyState = AppState { topics = [], rooms = [], blocks = [], timeslots = M.empt
 myRoom :: Room
 myRoom = Room "Frankfurt" (Just 30)
 myBlock :: Block
-myBlock = Block "Morgens" "9" "12"
+myBlock = Block "Morgens" 9 0 12 0
 mySlot :: Slot
 mySlot = Slot myRoom myBlock
 myTopic :: Topic
