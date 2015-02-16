@@ -32,14 +32,25 @@ getBroadcastChannel = do
 debugger :: ByteString -> WebSocketsT Handler ()
 debugger a = return $ trace (show a) ()
 
-commandResponse :: Command -> (WebSocketsT Handler) ByteString
+commandResponse :: Command -> WebSocketsT Handler ByteString
 commandResponse RequestState = do
-      serverState <- lift getServerState
-      liftIO $ atomically $ do
-        events <- generateEvents <$> readTVar serverState
-        return $ encode (ReplayEvents events)
-commandResponse (Echo s) = do
-      return $ encode s
+  serverState <- lift getServerState
+  liftIO $ atomically $ do
+    events <- generateEvents <$> readTVar serverState
+    return $ encode (ReplayEvents events)
+commandResponse PersistSnapshot = do
+  serverState <- lift getServerState
+  evs <- liftIO $ atomically $ generateEvents <$> readTVar serverState
+  key <- lift $ runDB $ insert $ Snapshot evs
+  return $ encode key
+commandResponse (LoadSnapshot key) = do
+  (Snapshot evs) <- lift $ runDB $ get404 key
+  serverState <- lift getServerState
+  liftIO $ atomically $ writeTVar serverState (replayEvents emptyState evs)
+  lift getBroadcastChannel >>= liftIO . atomically . flip writeTChan (encode (ReplayEvents evs))
+  return ""
+
+commandResponse (Echo s) = return $ encode s
 
 handleCommand :: Command -> WebSocketsT Handler ByteString
 handleCommand = commandResponse

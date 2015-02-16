@@ -15,8 +15,8 @@ import qualified Data.Map               as M
 import           GHC.Generics
 import           Yesod
 
-type Capacity = Int
 
+type Capacity = Int
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
 Room
@@ -25,8 +25,10 @@ Room
     deriving Show Eq Ord Generic
 Block
     description String
-    start String
-    end String
+    startHours Int
+    startMinutes Int
+    endHours Int
+    endMinutes Int
     deriving Show Eq Ord Generic
 Topic
     description String
@@ -38,6 +40,8 @@ Timeslots
     topicId TopicId
     Timeslot roomId blockId
     deriving Show Eq
+Snapshot
+    events [Event]
 |]
 
 instance ToJSON Room
@@ -62,27 +66,29 @@ instance ToJSON Slot
 
 data Action = Event | Command
 
-data Command = RequestState | Echo String
+data Command = RequestState | PersistSnapshot | LoadSnapshot SnapshotId | Echo String
   deriving (Show, Eq, Generic)
 
 instance FromJSON Command
 instance ToJSON Command
 
 data Event = AddTopic Topic
-            | DeleteTopic Topic
-            | AddRoom Room
-            | DeleteRoom Room
-            | AddBlock Block
-            | DeleteBlock Block
-            | AssignTopic Slot Topic
-            | UnassignTopic Topic
-            | ReplayEvents [Event]
-            | ShowError String
-            | NOP
-            deriving (Show, Eq, Generic)
+           | DeleteTopic Topic
+           | AddRoom Room
+           | DeleteRoom Room
+           | AddBlock Block
+           | DeleteBlock Block
+           | AssignTopic Slot Topic
+           | UnassignTopic Topic
+           | ReplayEvents [Event]
+           | ShowError String
+           | NOP
+           deriving (Show, Eq, Generic)
 
 instance FromJSON Event
 instance ToJSON Event
+
+derivePersistFieldJSON "Event"
 
 -------------------------
 -- | Entire AppState |--
@@ -109,7 +115,7 @@ emptyState = AppState { topics = [], rooms = [], blocks = [], timeslots = M.empt
 myRoom :: Room
 myRoom = Room "Frankfurt" (Just 30)
 myBlock :: Block
-myBlock = Block "Morgens" "9" "12"
+myBlock = Block "Morgens" 9 0 12 0
 mySlot :: Slot
 mySlot = Slot myRoom myBlock
 myTopic :: Topic
@@ -120,4 +126,4 @@ myState :: AppState
 myState = AppState { topics = [myTopic],
                       rooms = [myRoom],
                       blocks = [myBlock],
-                      timeslots = (M.insert mySlot myTopic M.empty)}
+                      timeslots = M.insert mySlot myTopic M.empty}
