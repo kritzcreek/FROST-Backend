@@ -19,9 +19,8 @@ The Yesod typeclass allows us to alter a number of the behaviors of Yesod, such
 as the default page layout, error handler functions, and how URLs are rendered.
 
 -}
-instance Yesod App where
-  cleanPath _ ["socket.io", ""] = Right ["socket.io"]
-  cleanPath _ p = Right p
+
+instance Yesod App
 
 instance YesodPersist App where
     type YesodPersistBackend App = SqlBackend
