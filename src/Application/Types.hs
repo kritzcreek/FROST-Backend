@@ -47,9 +47,6 @@ instance FromJSON Block
 instance ToJSON Topic
 instance FromJSON Topic
 
----------------
--- | Actions |--
----------------
 data Slot = Slot
   { room  :: Room
   , block :: Block
@@ -84,12 +81,6 @@ instance ToJSON Event
 
 derivePersistFieldJSON "Event"
 
--------------------------
--- | Entire AppState |--
--------------------------
-
---type Timeslot = (Slot, Topic)
-
 data AppState = AppState { topics    :: [Topic]
                          , rooms     :: [Room]
                          , blocks    :: [Block]
@@ -97,14 +88,8 @@ data AppState = AppState { topics    :: [Topic]
                          }
               deriving(Show, Eq, Generic)
 
---instance ToJSON AppState
---instance FromJSON AppState
-
- --------------------
- -- | Dummy Values |--
- --------------------
 emptyState :: AppState
-emptyState = AppState { topics = [], rooms = [], blocks = [], timeslots = M.empty }
+emptyState = AppState [] [] [] M.empty
 
 myRoom :: Room
 myRoom = Room "Frankfurt" (Just 30)
