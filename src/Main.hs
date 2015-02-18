@@ -26,15 +26,5 @@ main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCou
     state   <- atomically $ newTVar myState
     channel <- atomically newBroadcastTChan
     s <- static "static"
+    --warpEnv requires $PORT to be set
     warpEnv $ App pool (SocketState state channel) s
-
-{-
-
-Note that warpEnv handles a few important details for us:
-
-* Determines which port to listen on based on environment variables.
-* Sets up a number of WAI middlewares, such as request logging.
-* Converts our Yesod application into a WAI application.
-* Runs the whole thing.
-
--}
