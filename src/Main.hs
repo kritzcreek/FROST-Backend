@@ -1,7 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 import           Application.Types
+import           Handler.Admin
 import           Handler.Block
 import           Handler.Room
+import           Handler.Snapshot
 import           Handler.Socket
 import           Import
 

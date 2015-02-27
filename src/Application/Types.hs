@@ -6,6 +6,7 @@ module Application.Types where
 
 import           Application.TopicTypes
 import qualified Data.Map               as M
+import           Data.Time.Clock        (UTCTime)
 import           GHC.Generics
 import           Yesod
 
@@ -35,6 +36,7 @@ Timeslots
     Timeslot roomId blockId
     deriving Show Eq
 Snapshot
+    timestamp UTCTime
     events [Event]
 |]
 
@@ -55,9 +57,14 @@ data Slot = Slot
 instance FromJSON Slot
 instance ToJSON Slot
 
+data AdminCommand = PersistSnapshot | LoadSnapshot SnapshotId
+  deriving (Show, Eq, Generic)
+
+instance FromJSON AdminCommand
+
 data Action = Event | Command
 
-data Command = RequestState | PersistSnapshot | LoadSnapshot SnapshotId | Echo String
+data Command = RequestState
   deriving (Show, Eq, Generic)
 
 instance FromJSON Command
