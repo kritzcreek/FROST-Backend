@@ -14,7 +14,6 @@ evalEvent (DeleteBlock b) as   = deleteBlock b as
 evalEvent (AssignTopic s t) as = addTimeslot s t as
 evalEvent (UnassignTopic t) as = as { timeslots = M.filter (/= t) (timeslots as) }
 evalEvent (ReplayEvents as) _  = foldl (flip evalEvent) emptyState as
-evalEvent (ShowError _) as     = as
 evalEvent NOP as               = as
 
 addTimeslot :: Slot -> Topic -> AppState -> AppState

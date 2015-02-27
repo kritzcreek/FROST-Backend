@@ -6,11 +6,11 @@ import           Handler.Socket
 import           Import
 
 
-import           Yesod.Static
 import           Control.Concurrent.STM
 import           Control.Monad.Logger         (runStderrLoggingT)
 import           Control.Monad.Trans.Resource (runResourceT)
 import           Database.Persist.Postgresql
+import           Yesod.Static
 
 mkYesodDispatch "App" resourcesApp
 

@@ -72,7 +72,6 @@ data Event = AddTopic Topic
            | AssignTopic Slot Topic
            | UnassignTopic Topic
            | ReplayEvents [Event]
-           | ShowError String
            | NOP
            deriving (Show, Eq, Generic)
 
