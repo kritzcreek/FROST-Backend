@@ -89,7 +89,7 @@ executable open-yesod-backend
               , text
               , http-types
               , persistent-template
-
+              , time
   
   -- Directories containing source files.
   hs-source-dirs:      src
