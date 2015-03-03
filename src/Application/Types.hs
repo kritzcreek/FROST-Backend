@@ -38,6 +38,7 @@ Timeslots
 Snapshot
     timestamp UTCTime
     events [Event]
+    deriving Show Eq
 |]
 
 instance ToJSON Room
@@ -57,14 +58,14 @@ data Slot = Slot
 instance FromJSON Slot
 instance ToJSON Slot
 
-data AdminCommand = PersistSnapshot | LoadSnapshot SnapshotId
-  deriving (Show, Eq, Generic)
+--data AdminCommand = PersistSnapshot | LoadSnapshot SnapshotId
+--  deriving (Show, Eq, Generic)
 
-instance FromJSON AdminCommand
+--instance FromJSON AdminCommand
 
 data Action = Event | Command
 
-data Command = RequestState
+data Command = RequestState | PersistSnapshot | LoadSnapshot SnapshotId
   deriving (Show, Eq, Generic)
 
 instance FromJSON Command

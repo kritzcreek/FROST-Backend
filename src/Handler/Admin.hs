@@ -5,13 +5,18 @@ import           Application.Types
 import           Control.Applicative
 import           Control.Concurrent.STM
 import           Control.Monad          (forever)
+import           System.Locale
 import           Data.Aeson
 import           Data.ByteString.Lazy
+import           Data.Time.Format
 import           Data.Time.Clock
+import           Database.Persist.Sql
 import           Handler.Socket         (getBroadcastChannel, getServerState)
+import           Handler.Snapshot
 import           Import
 import           Yesod.WebSockets
 
+{-
 commandResponse ::  AdminCommand -> WebSocketsT (HandlerT App IO) ByteString
 commandResponse PersistSnapshot = do
   serverState <- lift getServerState
@@ -32,21 +37,34 @@ adminApp = forever $ do
     case decode msg of
       Just cmd -> commandResponse cmd >>= sendTextData
       Nothing -> sendTextData ("Es ist ein Fehler aufgetreten" :: ByteString)
+-}
 
 getAdminR :: Handler Html
 getAdminR = do
   time <- liftIO getCurrentTime
-  snapshots <- runDB $ selectKeysList [SnapshotTimestamp <. time] []
+  snapshots <- runDB $ selectList [SnapshotTimestamp <. time] []
   defaultLayout $ do
     setTitle "Admin Console"
 
     addStylesheetRemote "//cdn.foundation5.zurb.com/foundation.css"
 
     [whamlet|
-      <div .container-fluid>
-          <div .row-fluid>
-                <h1> Such Admin. Much Console.
-                <ul>
-                    $forall ss <- snapshots
-                      <li> #{show ss} whatever
+          <div .row>
+            <div .large-8 .columns>
+              <h1> Such Admin. Much Console.
+                <table>
+                  <thead>
+                    <tr>
+                      <th> Key
+                      <th> Time
+                      <th> Activate
+                  <tbody>
+                    $forall Entity key ss <- snapshots
+                      <tr>
+                        <td> #{show (fromSqlKey key)}
+                        <td> #{formatTime defaultTimeLocale "%d.%m.%Y %H:%M Uhr" (snapshotTimestamp ss)}
+                        <td>
+                          <button .button .small> Button
+            <div .large-4 .columns>
+              <h1> Menu plox
     |]

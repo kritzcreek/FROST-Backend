@@ -10,6 +10,7 @@ import           Data.ByteString.Lazy   (ByteString)
 import qualified Data.Text              as T
 import           Debug.Trace
 import           Import
+import           Data.Time.Clock
 
 import           Yesod.WebSockets
 
@@ -36,6 +37,19 @@ commandResponse RequestState = do
   liftIO $ atomically $ do
     events <- generateEvents <$> readTVar serverState
     return $ encode (ReplayEvents events)
+commandResponse PersistSnapshot = do
+  serverState <- lift getServerState
+  evs <- liftIO . atomically $ generateEvents <$> readTVar serverState
+  time <- liftIO getCurrentTime
+  key <- lift . runDB . insert $ Snapshot time evs
+  return $ encode key
+commandResponse (LoadSnapshot key) = do
+  (Snapshot _ evs) <- lift . runDB $ get404 key
+  serverState <- lift getServerState
+  liftIO . atomically $ writeTVar serverState (replayEvents emptyState evs)
+  lift getBroadcastChannel >>= liftIO . atomically . flip writeTChan (encode (ReplayEvents evs))
+  return ""
+
 
 handleCommand :: Command -> WebSocketsT Handler ByteString
 handleCommand = commandResponse

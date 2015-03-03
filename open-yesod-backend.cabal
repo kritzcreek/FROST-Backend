@@ -68,28 +68,29 @@ executable open-yesod-backend
   
   -- Other library packages from which modules are imported.
   build-depends:
-                base
-              , template-haskell
-              , bytestring
-              , transformers
-              , containers
-              , resourcet
-              , monad-logger
-              , stm
-              , yesod-core
-              , yesod-websockets
-              , yesod-persistent
-              , yesod-static
-              , aeson
-              , persistent
-              , persistent-postgresql
-              , data-default
-              , yesod
-              , websockets
-              , text
-              , http-types
-              , persistent-template
-              , time
+                      base
+                , aeson
+                , bytestring
+                , containers
+                , data-default
+                , http-types
+                , monad-logger
+                , old-locale >= 1.0.0.6
+                , persistent
+                , persistent-postgresql
+                , persistent-template
+                , resourcet
+                , stm
+                , template-haskell
+                , text
+                , time
+                , transformers
+                , websockets
+                , yesod
+                , yesod-core
+                , yesod-persistent
+                , yesod-static
+                , yesod-websockets
   
   -- Directories containing source files.
   hs-source-dirs:      src
