@@ -34,13 +34,19 @@ adminApp = forever $ do
       Nothing -> sendTextData ("Es ist ein Fehler aufgetreten" :: ByteString)
 
 getAdminR :: Handler Html
-getAdminR = defaultLayout $ do
-  setTitle "Admin Console"
+getAdminR = do
+  time <- liftIO getCurrentTime
+  snapshots <- runDB $ selectKeysList [SnapshotTimestamp <. time] []
+  defaultLayout $ do
+    setTitle "Admin Console"
 
-  addStylesheetRemote "//cdn.foundation5.zurb.com/foundation.css"
+    addStylesheetRemote "//cdn.foundation5.zurb.com/foundation.css"
 
-  [whamlet|
-    <div .container-fluid>
-         <div .row-fluid>
-               <h1> Such Admin. Much Console.
-  |]
+    [whamlet|
+      <div .container-fluid>
+          <div .row-fluid>
+                <h1> Such Admin. Much Console.
+                <ul>
+                    $forall ss <- snapshots
+                      <li> #{show ss} whatever
+    |]
