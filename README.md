@@ -1,21 +1,32 @@
-This project is a combination of a working web application and a tutorial.
-The inline comments should guide you through an understanding of how this
-application works.
+# FROST - Backend
 
-I recommend reading the modules in the following order:
+This is the Backend for the FROST Application.
 
-* Foundation
-* Import
-* Handler.Home
-* Handler.Fib
-* Handler.Markdown
-* Main
+## Build Instructions
 
-This application provides both a JSON API for two simple services (markdown processing
-and fibonacci number calculation), as well as a simplistic web frontend for accessing
-those services.
+Tested to work with:
 
-Feel free to set the Main module as the target and run this application immediately to
-see what the result is. Then come back, read the code, experiment with some changes,
-and rerun the application. If at any point you want to undo your changes, use the "Git"
-top menu and select "Reset".
+ - GHC 7.8.4
+ - Cabal 1.22.1.0
+ - cabal-install 1.22.0.1
+
+Run
+
+````
+cabal sandbox init
+cabal install alex happy
+cabal configure
+cabal install -j4
+
+export PORT=8000
+cabal run
+````
+
+Files in **./static** will be served by name.
+
+Snapshots can be saved and loaded from the [Admin Console](localhost:8000/admin).
+
+## Required Setup
+
+- PostgreSQL
+- FROST-Frontend Project built in the **./static** folder.
