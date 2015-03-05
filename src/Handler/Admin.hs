@@ -35,6 +35,5 @@ getAdminR = do
                 <h1> Such Admin. Much Console.
                 <form method=post action=@{SnapshotsR} enctype=#{enctype}>
                   ^{widget}
-                  <p>It also doesn't include the submit button.
-                  <button>Submit
+                  <button> Snapshot laden
     |]
