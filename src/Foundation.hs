@@ -37,7 +37,6 @@ mkYesodData "App" [parseRoutesNoCheck|
 /blocks/#BlockId            BlockR     GET POST
 /socket                     SocketR
 /admin                      AdminR     GET
-/admin/snapshots            SnapshotsR GET POST
-/admin/snapshot             SnapshotR  GET
+/admin/snapshot            SnapshotR GET POST
 /                           StaticR Static getStatic
 |]

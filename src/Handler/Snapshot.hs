@@ -1,15 +1,16 @@
 module Handler.Snapshot where
 
+import           Import
 import           Application.Engine
 import           Application.Types
-import           Control.Applicative
 import           Control.Concurrent.STM
 import           Data.Aeson
+import qualified Data.Text as T
 import           Data.ByteString.Lazy
 import           Data.Time.Clock
+import           Control.Applicative
+import           Handler.Socket( getServerState, getBroadcastChannel )
 import           Handler.Admin
-import           Handler.Socket         (getBroadcastChannel, getServerState)
-import           Import
 
 commandResponse :: Command ->  Handler ByteString
 commandResponse PersistSnapshot = do
@@ -26,20 +27,19 @@ commandResponse (LoadSnapshot key) = do
   return ""
 commandResponse _ = return ""
 
-getSnapshotR :: Handler Html
-getSnapshotR = undefined
-
-getSnapshotsR :: Handler Value
-getSnapshotsR = undefined
-
-postSnapshotsR :: Handler ()
-postSnapshotsR = do
-  ((result, _), _) <- runFormPost snapshotForm
+getSnapshotR :: Handler Value
+getSnapshotR = do
+  ((result, _), _) <- runFormGet $ loadSnapshotForm
   case result of
    FormSuccess command -> do
      setMessage "Erfolgreich geladen"
-     _ <- commandResponse command
+     commandResponse command
      redirect AdminR
    _ -> do
      setMessage "Es ist ein Fehler aufgetreten"
      redirect AdminR
+
+postSnapshotR :: Handler ()
+postSnapshotR = do
+  commandResponse PersistSnapshot
+  redirect AdminR
