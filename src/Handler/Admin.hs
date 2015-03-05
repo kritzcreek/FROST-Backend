@@ -5,19 +5,19 @@ import           Application.Types
 import           Control.Applicative
 import           Control.Concurrent.STM
 import           Control.Monad          (forever)
-import           System.Locale
 import           Data.Aeson
 import           Data.ByteString.Lazy
-import           Data.Time.Format
+import qualified Data.Text as T
 import           Data.Time.Clock
 import           Database.Persist.Sql
 import           Handler.Socket         (getBroadcastChannel, getServerState)
-import           Handler.Snapshot
 import           Import
 import           Yesod.WebSockets
 
-{-
-commandResponse ::  AdminCommand -> WebSocketsT (HandlerT App IO) ByteString
+instance RenderMessage App FormMessage where
+    renderMessage _ _ = defaultFormMessage
+
+commandResponse ::  Command -> WebSocketsT (HandlerT App IO) ByteString
 commandResponse PersistSnapshot = do
   serverState <- lift getServerState
   evs <- liftIO . atomically $ generateEvents <$> readTVar serverState
@@ -37,34 +37,29 @@ adminApp = forever $ do
     case decode msg of
       Just cmd -> commandResponse cmd >>= sendTextData
       Nothing -> sendTextData ("Es ist ein Fehler aufgetreten" :: ByteString)
--}
+
+
+snapshotForm snapshots = renderDivs $ LoadSnapshot
+  <$> areq (selectFieldList snapshots) "SnapshotField" Nothing
+
 
 getAdminR :: Handler Html
 getAdminR = do
   time <- liftIO getCurrentTime
-  snapshots <- runDB $ selectList [SnapshotTimestamp <. time] []
+  snapshots <- runDB $ selectKeysList [SnapshotTimestamp <. time] []
+  ((result, widget), enctype) <- runFormPost $ (snapshotForm $ (\ k -> ("whatever" :: T.Text, k)) <$> snapshots)
   defaultLayout $ do
     setTitle "Admin Console"
 
     addStylesheetRemote "//cdn.foundation5.zurb.com/foundation.css"
 
     [whamlet|
-          <div .row>
-            <div .large-8 .columns>
-              <h1> Such Admin. Much Console.
-                <table>
-                  <thead>
-                    <tr>
-                      <th> Key
-                      <th> Time
-                      <th> Activate
-                  <tbody>
-                    $forall Entity key ss <- snapshots
-                      <tr>
-                        <td> #{show (fromSqlKey key)}
-                        <td> #{formatTime defaultTimeLocale "%d.%m.%Y %H:%M Uhr" (snapshotTimestamp ss)}
-                        <td>
-                          <button .button .small> Button
-            <div .large-4 .columns>
-              <h1> Menu plox
+      <div .container-fluid>
+          <div .row-fluid>
+                <h1> Such Admin. Much Console.
+                <p> result
+                <form method=post action=@{SnapshotR} enctype=#{enctype}>
+                  ^{widget}
+                  <p>It also doesn't include the submit button.
+                  <button>Submit
     |]

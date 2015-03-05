@@ -3,8 +3,8 @@ module Handler.Snapshot where
 import Import
 import Application.Types
 
-getSnapshotR :: SnapshotId -> Handler Value
-getSnapshotR _ = undefined
+getSnapshotR :: Handler Html
+getSnapshotR = undefined
 
 getSnapshotsR :: Handler Value
 getSnapshotsR = undefined

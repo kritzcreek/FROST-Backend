@@ -38,6 +38,6 @@ mkYesodData "App" [parseRoutesNoCheck|
 /socket                     SocketR
 /admin                      AdminR     GET
 /admin/snapshots            SnapshotsR GET POST
-/admin/snapshot/#SnapshotId SnapshotR  GET
+/admin/snapshot             SnapshotR  GET
 /                           StaticR Static getStatic
 |]
