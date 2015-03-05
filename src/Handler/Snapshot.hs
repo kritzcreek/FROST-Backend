@@ -5,7 +5,6 @@ import           Application.Engine
 import           Application.Types
 import           Control.Concurrent.STM
 import           Data.Aeson
-import qualified Data.Text as T
 import           Data.ByteString.Lazy
 import           Data.Time.Clock
 import           Control.Applicative
@@ -25,6 +24,7 @@ commandResponse (LoadSnapshot key) = do
   liftIO . atomically $ writeTVar serverState (replayEvents emptyState evs)
   getBroadcastChannel >>= lift . atomically . flip writeTChan (encode (ReplayEvents evs))
   return ""
+commandResponse _ = return ""
 
 getSnapshotR :: Handler Html
 getSnapshotR = undefined
@@ -34,11 +34,11 @@ getSnapshotsR = undefined
 
 postSnapshotsR :: Handler ()
 postSnapshotsR = do
-  ((result, _), _) <- runFormPost $ snapshotForm
+  ((result, _), _) <- runFormPost snapshotForm
   case result of
    FormSuccess command -> do
      setMessage "Erfolgreich geladen"
-     commandResponse command
+     _ <- commandResponse command
      redirect AdminR
    _ -> do
      setMessage "Es ist ein Fehler aufgetreten"
