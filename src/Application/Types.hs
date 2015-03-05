@@ -58,14 +58,12 @@ data Slot = Slot
 instance FromJSON Slot
 instance ToJSON Slot
 
---data AdminCommand = PersistSnapshot | LoadSnapshot SnapshotId
---  deriving (Show, Eq, Generic)
-
---instance FromJSON AdminCommand
+data AdminCommand = PersistSnapshot | LoadSnapshot SnapshotId
+  deriving (Show, Eq, Generic)
 
 data Action = Event | Command
 
-data Command = RequestState | PersistSnapshot | LoadSnapshot SnapshotId
+data Command = RequestState
   deriving (Show, Eq, Generic)
 
 instance FromJSON Command

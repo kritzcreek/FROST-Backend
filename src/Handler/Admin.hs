@@ -10,13 +10,13 @@ import           System.Locale       (defaultTimeLocale)
 instance RenderMessage App FormMessage where
     renderMessage _ _ = defaultFormMessage
 
-loadSnapshotFormA :: AForm Handler Command
+loadSnapshotFormA :: AForm Handler AdminCommand
 loadSnapshotFormA = LoadSnapshot <$> areq (selectField options) "Lade Snapshot" Nothing
   where
     formatTimestamp = T.pack . formatTime defaultTimeLocale "%d.%m.%Y, %H:%M:%S"
     options = optionsPersistKey [] [Desc SnapshotTimestamp ,LimitTo 5] (\k -> formatTimestamp (snapshotTimestamp k))
 
-loadSnapshotForm :: Html -> MForm Handler (FormResult Command, Widget)
+loadSnapshotForm :: Html -> MForm Handler (FormResult AdminCommand, Widget)
 loadSnapshotForm = do
     renderDivs loadSnapshotFormA
 

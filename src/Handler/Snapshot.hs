@@ -11,7 +11,7 @@ import           Handler.Admin
 import           Handler.Socket         (getBroadcastChannel, getServerState)
 import           Import
 
-commandResponse :: Command ->  Handler ByteString
+commandResponse :: AdminCommand ->  Handler ByteString
 commandResponse PersistSnapshot = do
   serverState <- getServerState
   evs <- lift $ atomically $ generateEvents <$> readTVar serverState
@@ -24,7 +24,6 @@ commandResponse (LoadSnapshot key) = do
   liftIO . atomically $ writeTVar serverState (replayEvents emptyState evs)
   getBroadcastChannel >>= lift . atomically . flip writeTChan (encode (ReplayEvents evs))
   return ""
-commandResponse _ = return ""
 
 getSnapshotR :: Handler Value
 getSnapshotR = do
