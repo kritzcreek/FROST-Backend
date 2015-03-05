@@ -20,8 +20,7 @@ commandResponse PersistSnapshot = do
   return $ encode key
 commandResponse (LoadSnapshot key) = do
   (Snapshot _ evs) <- runDB $ get404 key
-  serverState <- getServerState
-  liftIO . atomically $ writeTVar serverState (replayEvents emptyState evs)
+  getServerState >>= lift . atomically . flip writeTVar (replayEvents emptyState evs)
   getBroadcastChannel >>= lift . atomically . flip writeTChan (encode (ReplayEvents evs))
   return ""
 
