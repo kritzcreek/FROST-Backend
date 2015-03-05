@@ -26,15 +26,9 @@ commandResponse (LoadSnapshot key) = do
   return ""
 commandResponse _ = return ""
 
-getSnapshotR :: Handler Html
-getSnapshotR = undefined
-
-getSnapshotsR :: Handler Value
-getSnapshotsR = undefined
-
-postSnapshotsR :: Handler ()
-postSnapshotsR = do
-  ((result, _), _) <- runFormPost snapshotForm
+getSnapshotR :: Handler Value
+getSnapshotR = do
+  ((result, _), _) <- runFormGet loadSnapshotForm
   case result of
    FormSuccess command -> do
      setMessage "Erfolgreich geladen"
@@ -43,3 +37,8 @@ postSnapshotsR = do
    _ -> do
      setMessage "Es ist ein Fehler aufgetreten"
      redirect AdminR
+
+postSnapshotR :: Handler ()
+postSnapshotR = do
+  _ <- commandResponse PersistSnapshot
+  redirect AdminR

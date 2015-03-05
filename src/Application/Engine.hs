@@ -1,7 +1,7 @@
 module Application.Engine where
 
-import Application.Types
-import qualified Data.Map as M
+import           Application.Types
+import qualified Data.Map          as M
 
 
 evalEvent :: Event -> AppState -> AppState

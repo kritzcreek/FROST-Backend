@@ -1,29 +1,28 @@
 module Handler.Admin where
 
-
 import           Application.Types
 import           Control.Applicative
-
-
-import qualified Data.Text              as T
-
+import qualified Data.Text           as T
+import           Data.Time.Format    (formatTime)
 import           Import
+import           System.Locale       (defaultTimeLocale)
 
 instance RenderMessage App FormMessage where
     renderMessage _ _ = defaultFormMessage
 
-snapshotFormA :: AForm Handler Command
-snapshotFormA = LoadSnapshot <$> areq (selectField options) "Lade Snapshot" Nothing
+loadSnapshotFormA :: AForm Handler Command
+loadSnapshotFormA = LoadSnapshot <$> areq (selectField options) "Lade Snapshot" Nothing
   where
-    options = optionsPersistKey [] [LimitTo 5] (\k -> T.pack $ show (snapshotTimestamp k))
+    formatTimestamp = T.pack . formatTime defaultTimeLocale "%d.%m.%Y, %H:%M:%S"
+    options = optionsPersistKey [] [Desc SnapshotTimestamp ,LimitTo 5] (\k -> formatTimestamp (snapshotTimestamp k))
 
-snapshotForm :: Html -> MForm Handler (FormResult Command, Widget)
-snapshotForm = do
-    renderDivs snapshotFormA
+loadSnapshotForm :: Html -> MForm Handler (FormResult Command, Widget)
+loadSnapshotForm = do
+    renderDivs loadSnapshotFormA
 
 getAdminR :: Handler Html
 getAdminR = do
-  ((_, widget), enctype) <- runFormPost $ snapshotForm
+  ((_, widget), enctype) <- runFormGet $ loadSnapshotForm
   defaultLayout $ do
     setTitle "Admin Console"
 
@@ -33,7 +32,9 @@ getAdminR = do
       <div .container-fluid>
           <div .row-fluid>
                 <h1> Such Admin. Much Console.
-                <form method=post action=@{SnapshotsR} enctype=#{enctype}>
+                <form method=get action=@{SnapshotR} enctype=#{enctype}>
                   ^{widget}
-                  <button> Snapshot laden
+                  <button>Snapshot laden
+                <form method=post action=@{SnapshotR}>
+                  <button>Aktuellen Stand speichern
     |]

@@ -7,7 +7,6 @@ import           Handler.Snapshot
 import           Handler.Socket
 import           Import
 
-
 import           Control.Concurrent.STM
 import           Control.Monad.Logger         (runStderrLoggingT)
 import           Control.Monad.Trans.Resource (runResourceT)
