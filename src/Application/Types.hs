@@ -63,7 +63,7 @@ data AdminCommand = PersistSnapshot | LoadSnapshot SnapshotId
 
 data Action = Event | Command
 
-data Command = RequestState
+data Command = RequestState | Echo String
   deriving (Show, Eq, Generic)
 
 instance FromJSON Command

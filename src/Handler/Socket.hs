@@ -28,16 +28,13 @@ getBroadcastChannel = do
 debugger :: ByteString -> WebSocketsT Handler ()
 debugger a = return $ trace (show a) ()
 
-commandResponse :: Command -> WebSocketsT Handler ByteString
-commandResponse RequestState = do
+handleCommand :: Command -> WebSocketsT Handler ByteString
+handleCommand RequestState = do
   serverState <- lift getServerState
   liftIO $ atomically $ do
     events <- generateEvents <$> readTVar serverState
     return $ encode (ReplayEvents events)
-
-
-handleCommand :: Command -> WebSocketsT Handler ByteString
-handleCommand = commandResponse
+handleCommand (Echo s) = return (encode s)
 
 logSomething :: Show a => a -> WebSocketsT Handler ()
 logSomething a = $(logInfo) $ T.pack (show a)
