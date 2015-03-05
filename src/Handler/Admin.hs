@@ -2,52 +2,27 @@ module Handler.Admin where
 
 import           Application.Engine
 import           Application.Types
-import           Control.Applicative
 import           Control.Concurrent.STM
-import           Control.Monad          (forever)
 import           Data.Aeson
-import           Data.ByteString.Lazy
 import qualified Data.Text as T
 import           Data.Time.Clock
-import           Database.Persist.Sql
-import           Handler.Socket         (getBroadcastChannel, getServerState)
+import           Control.Applicative
 import           Import
-import           Yesod.WebSockets
 
 instance RenderMessage App FormMessage where
     renderMessage _ _ = defaultFormMessage
 
-commandResponse ::  Command -> WebSocketsT (HandlerT App IO) ByteString
-commandResponse PersistSnapshot = do
-  serverState <- lift getServerState
-  evs <- liftIO . atomically $ generateEvents <$> readTVar serverState
-  time <- liftIO getCurrentTime
-  key <- lift . runDB . insert $ Snapshot time evs
-  return $ encode key
-commandResponse (LoadSnapshot key) = do
-  (Snapshot _ evs) <- lift . runDB $ get404 key
-  serverState <- lift getServerState
-  liftIO . atomically $ writeTVar serverState (replayEvents emptyState evs)
-  lift getBroadcastChannel >>= liftIO . atomically . flip writeTChan (encode (ReplayEvents evs))
-  return ""
+snapshotFormA :: AForm Handler Command
+snapshotFormA = LoadSnapshot <$> areq (selectField options) "Lade Snapshot" Nothing
+  where
+    options = optionsPersistKey [] [LimitTo 5] (\k -> T.pack $ show (snapshotTimestamp k))
 
-adminApp :: WebSocketsT Handler ()
-adminApp = forever $ do
-    msg <- receiveData
-    case decode msg of
-      Just cmd -> commandResponse cmd >>= sendTextData
-      Nothing -> sendTextData ("Es ist ein Fehler aufgetreten" :: ByteString)
-
-
-snapshotForm snapshots = renderDivs $ LoadSnapshot
-  <$> areq (selectFieldList snapshots) "SnapshotField" Nothing
-
+snapshotForm = do
+    renderDivs snapshotFormA
 
 getAdminR :: Handler Html
 getAdminR = do
-  time <- liftIO getCurrentTime
-  snapshots <- runDB $ selectKeysList [SnapshotTimestamp <. time] []
-  ((result, widget), enctype) <- runFormPost $ (snapshotForm $ (\ k -> ("whatever" :: T.Text, k)) <$> snapshots)
+  ((result, widget), enctype) <- runFormPost $ snapshotForm
   defaultLayout $ do
     setTitle "Admin Console"
 
@@ -57,8 +32,7 @@ getAdminR = do
       <div .container-fluid>
           <div .row-fluid>
                 <h1> Such Admin. Much Console.
-                <p> result
-                <form method=post action=@{SnapshotR} enctype=#{enctype}>
+                <form method=post action=@{SnapshotsR} enctype=#{enctype}>
                   ^{widget}
                   <p>It also doesn't include the submit button.
                   <button>Submit
