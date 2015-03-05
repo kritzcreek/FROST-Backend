@@ -1,12 +1,12 @@
 module Handler.Admin where
 
-import           Application.Engine
+
 import           Application.Types
-import           Control.Concurrent.STM
-import           Data.Aeson
-import qualified Data.Text as T
-import           Data.Time.Clock
 import           Control.Applicative
+
+
+import qualified Data.Text              as T
+
 import           Import
 
 instance RenderMessage App FormMessage where
@@ -17,12 +17,13 @@ snapshotFormA = LoadSnapshot <$> areq (selectField options) "Lade Snapshot" Noth
   where
     options = optionsPersistKey [] [LimitTo 5] (\k -> T.pack $ show (snapshotTimestamp k))
 
+snapshotForm :: Html -> MForm Handler (FormResult Command, Widget)
 snapshotForm = do
     renderDivs snapshotFormA
 
 getAdminR :: Handler Html
 getAdminR = do
-  ((result, widget), enctype) <- runFormPost $ snapshotForm
+  ((_, widget), enctype) <- runFormPost $ snapshotForm
   defaultLayout $ do
     setTitle "Admin Console"
 
