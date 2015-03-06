@@ -6,14 +6,14 @@ mkdir ./static/
 touch ./static/.gitkeep
 
 #BUILD FRONTEND
-pushd ../reactive-psc/
+pushd ../FROST-Frontend/
 
 ./build.sh
 
 popd
 
 #COPY FRONTEND
-cp -r ../reactive-psc/build/* ./static/
+cp -r ../FROST-Frontend/build/* ./static/
 
 #BUILD BACKEND
 export PORT=8000
