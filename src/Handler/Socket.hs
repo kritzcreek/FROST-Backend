@@ -11,50 +11,54 @@ import           Control.Monad          (forever)
 import           Data.Aeson
 import           Data.ByteString.Lazy   (ByteString)
 import qualified Data.Text              as T
+import qualified Data.Map               as M
+import           Data.Maybe(fromJust)
 import           Debug.Trace
 import           Import
 import           Yesod.WebSockets
 
-getServerState :: Handler (TVar AppState)
-getServerState = do
-  App _ (SocketState sState _) _ <- getYesod
-  return sState
+getServerState :: InstanceId -> Handler (TVar AppState)
+getServerState instanceId = do
+  App _ states _ <- getYesod
+  sts <- liftIO $ atomically $ M.lookup instanceId <$> (readTVar states)
+  return $ fromJust $ appState <$> sts
 
-getBroadcastChannel :: Handler (TChan ByteString)
-getBroadcastChannel = do
-  App _ (SocketState _ channel) _ <- getYesod
-  return channel
+getBroadcastChannel :: InstanceId -> Handler (TChan ByteString)
+getBroadcastChannel instanceId = do
+  App _ states _ <- getYesod
+  sts <- liftIO $ atomically $ M.lookup instanceId <$> (readTVar states)
+  return $ fromJust $ broadcastChan <$> sts
 
 debugger :: ByteString -> WebSocketsT Handler ()
 debugger a = return $ trace (show a) ()
 
-handleCommand :: Command -> WebSocketsT Handler ByteString
-handleCommand RequestState = do
-  serverState <- lift getServerState
+handleCommand :: InstanceId -> Command -> WebSocketsT Handler ByteString
+handleCommand instanceId RequestState = do
+  serverState <- lift $ getServerState instanceId
   liftIO $ atomically $ do
     events <- generateEvents <$> readTVar serverState
     return $ encode (ReplayEvents events)
-handleCommand (Echo s) = return (encode s)
+handleCommand _ (Echo s) = return (encode s)
 
 logSomething :: Show a => a -> WebSocketsT Handler ()
 logSomething a = $(logInfo) $ T.pack (show a)
 
-applyEvent :: Event -> WebSocketsT Handler ()
-applyEvent e = do
-  serverState <- lift getServerState
+applyEvent :: InstanceId -> Event -> WebSocketsT Handler ()
+applyEvent instanceId e = do
+  serverState <- lift $ getServerState instanceId
   liftIO $ atomically $ do
     newState <- evalEvent e <$> readTVar serverState
     writeTVar serverState newState
 
-handleEvent :: Event -> WebSocketsT Handler ByteString
-handleEvent e = do
+handleEvent :: InstanceId -> Event -> WebSocketsT Handler ByteString
+handleEvent instanceId e = do
   logSomething e
-  applyEvent e
+  applyEvent instanceId e
   return (encode e)
 
-openSpaceApp :: WebSocketsT Handler ()
-openSpaceApp = do
-  writeChan <- lift getBroadcastChannel
+openSpaceApp :: InstanceId -> WebSocketsT Handler ()
+openSpaceApp instanceId = do
+  writeChan <- lift $ getBroadcastChannel instanceId
   readChan  <- liftIO $ atomically $ dupTChan writeChan
   race_
         (forever $ do
@@ -64,10 +68,12 @@ openSpaceApp = do
           action <- receiveData
           logSomething action
           case decode action of
-            Just (e :: Event) -> handleEvent e >>= liftIO . atomically . writeTChan writeChan
+            Just (e :: Event) -> handleEvent' e >>= liftIO . atomically . writeTChan writeChan
             Nothing -> case decode action of
-              Just (c :: Command) -> handleCommand c >>= sendTextData
+              Just (c :: Command) -> handleCommand' c >>= sendTextData
               Nothing -> return ())
+  where handleCommand' = handleCommand instanceId
+        handleEvent' = handleEvent instanceId
 
-handleSocketR :: Handler ()
-handleSocketR = webSockets openSpaceApp
+handleSocketR :: InstanceId -> Handler ()
+handleSocketR instanceId = webSockets $ openSpaceApp instanceId

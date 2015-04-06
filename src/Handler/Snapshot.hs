@@ -11,17 +11,19 @@ import           Handler.Admin
 import           Handler.Socket         (getBroadcastChannel, getServerState)
 import           Import
 
+
+-- TODO: The zeros in here are BAD!!
 commandResponse :: AdminCommand ->  Handler ByteString
 commandResponse PersistSnapshot = do
-  serverState <- getServerState
+  serverState <- getServerState (InstanceId 0) -- Totally change this!
   evs <- lift $ atomically $ generateEvents <$> readTVar serverState
   time <- liftIO getCurrentTime
   key <- runDB . insert $ Snapshot time evs
   return $ encode key
 commandResponse (LoadSnapshot key) = do
   (Snapshot _ evs) <- runDB $ get404 key
-  getServerState >>= lift . atomically . flip writeTVar (replayEvents emptyState evs)
-  getBroadcastChannel >>= lift . atomically . flip writeTChan (encode (ReplayEvents evs))
+  getServerState (InstanceId 0) >>= lift . atomically . flip writeTVar (replayEvents emptyState evs)
+  getBroadcastChannel (InstanceId 0) >>= lift . atomically . flip writeTChan (encode (ReplayEvents evs))
   return ""
 
 getSnapshotR :: Handler Value
