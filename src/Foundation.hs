@@ -41,6 +41,7 @@ mkYesodData "App" [parseRoutes|
 /admin/#InstanceId          AdminR     GET
 /instances                  InstancesR GET POST
 /instance/#InstanceId       InstanceR  GET
+/instance/mobile/#InstanceId       InstanceMobileR  GET
 /admin/snapshot/#InstanceId SnapshotR  GET POST
 /socket/#InstanceId         SocketR
 !/instance                  StaticR Static getStatic

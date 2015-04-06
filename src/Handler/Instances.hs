@@ -1,4 +1,10 @@
-module Handler.Instances (getInstancesR, postInstancesR, getInstanceR, keys, unpack) where
+module Handler.Instances 
+( getInstancesR
+, postInstancesR
+, getInstanceR
+, getInstanceMobileR
+, keys
+, unpack) where
 
 import Import
 import Application.Types
@@ -45,10 +51,16 @@ postInstancesR = do
     return iid
   redirect $ InstanceR newInstanceId
 
-getInstanceR :: InstanceId -> Handler Html
-getInstanceR instanceId = do
+getInstance :: FilePath -> InstanceId -> Handler Html
+getInstance path instanceId = do
   application <- getYesod
   ks <- liftIO $ atomically $ keys application
   if unpack instanceId `elem` ks
-    then sendFile "text/html" $ "static" </> "index.html"
+    then sendFile "text/html" $ "static" </> path </> "index.html"
     else sendResponseStatus status404 ("Instance doesn't exist" :: Text)
+
+getInstanceR :: InstanceId -> Handler Html
+getInstanceR = getInstance "" 
+
+getInstanceMobileR :: InstanceId -> Handler Html
+getInstanceMobileR = getInstance "mobile"
