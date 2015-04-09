@@ -1,9 +1,12 @@
-module Handler.Instances (getInstancesR, postInstancesR) where
+module Handler.Instances (getInstancesR, postInstancesR, getInstanceR) where
 
 import Import
 import Application.Types
 import qualified Data.Map as M
+import Data.Text (Text())
 import Control.Concurrent.STM
+import Network.HTTP.Types
+import System.FilePath.Posix((</>))
 
 mkNewId :: App -> STM InstanceId
 mkNewId application = do
@@ -40,3 +43,12 @@ postInstancesR = do
     iid <- mkNewId application
     initNewInstance application iid
     return $ toJSON (unpack iid)
+
+
+getInstanceR :: InstanceId -> Handler Html
+getInstanceR instanceId = do
+  application <- getYesod
+  ks <- liftIO $ atomically $ keys application
+  if unpack instanceId `elem` ks
+    then sendFile "text/html" $ "static" </> "index.html"
+    else sendResponseStatus status404 ("Instance doesn't exist" :: Text)
