@@ -8,26 +8,27 @@ import           Application.Types
 import           Control.Applicative
 import           Control.Concurrent.STM
 import           Control.Monad          (forever)
+import           Network.HTTP.Types
 import           Data.Aeson
 import           Data.ByteString.Lazy   (ByteString)
 import qualified Data.Text              as T
 import qualified Data.Map               as M
-import           Data.Maybe(fromJust)
 import           Debug.Trace
 import           Import
 import           Yesod.WebSockets
 
 getServerState :: InstanceId -> Handler (TVar AppState)
-getServerState instanceId = do
-  App _ states _ <- getYesod
-  sts <- liftIO $ atomically $ M.lookup instanceId <$> (readTVar states)
-  return $ fromJust $ appState <$> sts
+getServerState = getFromSocketstate appState
 
 getBroadcastChannel :: InstanceId -> Handler (TChan ByteString)
-getBroadcastChannel instanceId = do
+getBroadcastChannel = getFromSocketstate broadcastChan
+
+getFromSocketstate ::(SocketState -> a) ->  InstanceId -> Handler a
+getFromSocketstate accessor instanceId = do
   App _ states _ <- getYesod
   sts <- liftIO $ atomically $ M.lookup instanceId <$> (readTVar states)
-  return $ fromJust $ broadcastChan <$> sts
+  maybe lookupError return (accessor <$> sts)
+  where lookupError = sendResponseStatus status404 ("Instance doesn't exist" :: T.Text)
 
 debugger :: ByteString -> WebSocketsT Handler ()
 debugger a = return $ trace (show a) ()

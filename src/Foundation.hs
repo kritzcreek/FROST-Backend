@@ -38,10 +38,10 @@ mkYesodData "App" [parseRoutes|
 /blocks                     BlocksR    GET POST
 /rooms/#RoomId              RoomR      GET POST
 /blocks/#BlockId            BlockR     GET POST
-/admin                      AdminR     GET
+/admin/#InstanceId          AdminR     GET
 /instances                  InstancesR GET POST
 /instance/#InstanceId       InstanceR  GET
-/admin/snapshot             SnapshotR  GET POST
+/admin/snapshot/#InstanceId SnapshotR  GET POST
 /socket/#InstanceId         SocketR
 !/instance                  StaticR Static getStatic
 |]

@@ -74,6 +74,7 @@ executable FROST-Backend
                 , containers
                 , data-default
                 , http-types
+                , filepath
                 , monad-logger
                 , old-locale >= 1.0.0.6
                 , persistent

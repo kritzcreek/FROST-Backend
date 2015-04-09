@@ -1,4 +1,4 @@
-module Handler.Instances (getInstancesR, postInstancesR, getInstanceR) where
+module Handler.Instances (getInstancesR, postInstancesR, getInstanceR, keys, unpack) where
 
 import Import
 import Application.Types
@@ -11,7 +11,7 @@ import System.FilePath.Posix((</>))
 mkNewId :: App -> STM InstanceId
 mkNewId application = do
     ks <- keys application
-    return $ InstanceId $ maximum ks + 1
+    return $ InstanceId (maximum ks + 1)
 
 initNewInstance :: App -> InstanceId -> STM ()
 initNewInstance application iid = do
@@ -39,11 +39,11 @@ getInstancesR = do
 postInstancesR :: Handler Value
 postInstancesR = do
   application <- getYesod
-  liftIO $ atomically $ do
+  newInstanceId <- liftIO $ atomically $ do
     iid <- mkNewId application
     initNewInstance application iid
-    return $ toJSON (unpack iid)
-
+    return iid
+  redirect $ InstanceR newInstanceId
 
 getInstanceR :: InstanceId -> Handler Html
 getInstanceR instanceId = do
