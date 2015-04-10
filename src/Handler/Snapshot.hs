@@ -11,32 +11,33 @@ import           Handler.Admin
 import           Handler.Socket         (getBroadcastChannel, getServerState)
 import           Import
 
-commandResponse :: AdminCommand ->  Handler ByteString
-commandResponse PersistSnapshot = do
-  serverState <- getServerState
+
+commandResponse :: InstanceId -> AdminCommand ->  Handler ByteString
+commandResponse iid PersistSnapshot = do
+  serverState <- getServerState iid -- Totally change this!
   evs <- lift $ atomically $ generateEvents <$> readTVar serverState
   time <- liftIO getCurrentTime
   key <- runDB . insert $ Snapshot time evs
   return $ encode key
-commandResponse (LoadSnapshot key) = do
+commandResponse iid (LoadSnapshot key) = do
   (Snapshot _ evs) <- runDB $ get404 key
-  getServerState >>= lift . atomically . flip writeTVar (replayEvents emptyState evs)
-  getBroadcastChannel >>= lift . atomically . flip writeTChan (encode (ReplayEvents evs))
+  getServerState iid >>= lift . atomically . flip writeTVar (replayEvents emptyState evs)
+  getBroadcastChannel iid >>= lift . atomically . flip writeTChan (encode (ReplayEvents evs))
   return ""
 
-getSnapshotR :: Handler Value
-getSnapshotR = do
+getSnapshotR :: InstanceId -> Handler Value
+getSnapshotR iid = do
   ((result, _), _) <- runFormGet loadSnapshotForm
   case result of
    FormSuccess command -> do
      setMessage "Erfolgreich geladen"
-     _ <- commandResponse command
-     redirect AdminR
+     _ <- commandResponse iid command
+     redirect $ AdminR iid
    _ -> do
      setMessage "Es ist ein Fehler aufgetreten"
-     redirect AdminR
+     redirect $ AdminR iid
 
-postSnapshotR :: Handler ()
-postSnapshotR = do
-  _ <- commandResponse PersistSnapshot
-  redirect AdminR
+postSnapshotR :: InstanceId -> Handler ()
+postSnapshotR iid = do
+  _ <- commandResponse iid PersistSnapshot
+  redirect $ AdminR iid

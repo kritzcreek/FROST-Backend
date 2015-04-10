@@ -5,11 +5,13 @@ import           Handler.Block
 import           Handler.Room
 import           Handler.Snapshot
 import           Handler.Socket
+import           Handler.Instances
 import           Import
 
 import           Control.Concurrent.STM
 import           Control.Monad.Logger         (runStderrLoggingT)
 import           Control.Monad.Trans.Resource (runResourceT)
+import           Data.Map
 import           Database.Persist.Postgresql
 import           Yesod.Static
 
@@ -26,6 +28,7 @@ main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCou
     runResourceT $ flip runSqlPool pool $ runMigration migrateAll
     state   <- atomically $ newTVar myState
     channel <- atomically newBroadcastTChan
+    socketStates' <- atomically $ newTVar $ singleton (InstanceId 0) (SocketState state channel)
     s <- static "static"
     --warpEnv requires $PORT to be set
-    warpEnv $ App pool (SocketState state channel) s
+    warpEnv $ App pool socketStates' s

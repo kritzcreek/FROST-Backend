@@ -2,13 +2,25 @@ module Foundation where
 
 import           Application.Types
 import           Control.Concurrent.STM
+import           Control.Applicative
 import           Data.ByteString.Lazy
+import           Data.Map
+
 import           Database.Persist.Postgresql
 import           Yesod
 import           Yesod.Static
 
+newtype InstanceId = InstanceId Integer deriving(Show, Eq, Ord, Read)
+instance PathPiece InstanceId where
+  toPathPiece (InstanceId iid) = toPathPiece iid
+  fromPathPiece iid = InstanceId <$> fromPathPiece iid
+
+
 data SocketState = SocketState { appState :: TVar AppState,  broadcastChan :: TChan ByteString }
-data App = App { conpool :: ConnectionPool, socketState :: SocketState, getStatic :: Static }
+
+type SocketStates = Map InstanceId SocketState
+
+data App = App { conpool :: ConnectionPool, socketStates :: TVar SocketStates, getStatic :: Static }
 
 staticFiles "static"
 
@@ -21,13 +33,15 @@ instance YesodPersist App where
         App pool _ _ <- getYesod
         runSqlPool action pool
 
-mkYesodData "App" [parseRoutesNoCheck|
+mkYesodData "App" [parseRoutes|
 /rooms                      RoomsR     GET POST
 /blocks                     BlocksR    GET POST
 /rooms/#RoomId              RoomR      GET POST
 /blocks/#BlockId            BlockR     GET POST
-/socket                     SocketR
-/admin                      AdminR     GET
-/admin/snapshot            SnapshotR GET POST
-/                           StaticR Static getStatic
+/admin/#InstanceId          AdminR     GET
+/instances                  InstancesR GET POST
+/instance/#InstanceId       InstanceR  GET
+/admin/snapshot/#InstanceId SnapshotR  GET POST
+/socket/#InstanceId         SocketR
+!/instance                  StaticR Static getStatic
 |]
