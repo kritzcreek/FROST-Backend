@@ -5,12 +5,13 @@ import           Control.Concurrent.STM
 import           Control.Applicative
 import           Data.ByteString.Lazy
 import           Data.Map
+import           Data.Text (Text ())
 
 import           Database.Persist.Postgresql
 import           Yesod
 import           Yesod.Static
 
-newtype InstanceId = InstanceId Integer deriving(Show, Eq, Ord, Read)
+newtype InstanceId = InstanceId Text deriving(Show, Eq, Ord, Read)
 instance PathPiece InstanceId where
   toPathPiece (InstanceId iid) = toPathPiece iid
   fromPathPiece iid = InstanceId <$> fromPathPiece iid

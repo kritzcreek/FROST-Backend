@@ -69,30 +69,31 @@ executable FROST-Backend
   -- Other library packages from which modules are imported.
   build-depends:
                 base
-                , aeson
-                , bytestring
-                , containers
-                , data-default
-                , http-types
-                , filepath
-                , monad-logger
-                , old-locale >= 1.0.0.6
-                , persistent
-                , persistent-postgresql
-                , persistent-template
-                , resourcet
-                , stm
-                , template-haskell
-                , text
-                , time
-                , transformers
-                , websockets
-                , yesod
-                , yesod-core
-                , yesod-persistent
-                , yesod-static
-                , yesod-websockets
-
+              , aeson
+              , bytestring
+              , containers
+              , data-default
+              , http-types
+              , filepath
+              , monad-logger
+              , old-locale >= 1.0.0.6
+              , persistent
+              , persistent-postgresql
+              , persistent-template
+              , resourcet
+              , stm
+              , template-haskell
+              , text
+              , time
+              , transformers
+              , uuid
+              , websockets
+              , yesod
+              , yesod-core
+              , yesod-persistent
+              , yesod-static
+              , yesod-websockets
+                
   -- Directories containing source files.
   hs-source-dirs:      src
 

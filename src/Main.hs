@@ -28,7 +28,7 @@ main = runStderrLoggingT $ withPostgresqlPool connectionString openConnectionCou
     runResourceT $ flip runSqlPool pool $ runMigration migrateAll
     state   <- atomically $ newTVar myState
     channel <- atomically newBroadcastTChan
-    socketStates' <- atomically $ newTVar $ singleton (InstanceId 0) (SocketState state channel)
+    socketStates' <- atomically $ newTVar $ singleton (InstanceId "0") (SocketState state channel)
     s <- static "static"
     --warpEnv requires $PORT to be set
     warpEnv $ App pool socketStates' s
