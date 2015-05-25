@@ -1,0 +1,25 @@
+Room json
+    name String
+    capacity Int Maybe
+    deriving Show Eq Ord Generic
+Block json
+    description String
+    startHours Int
+    startMinutes Int
+    endHours Int
+    endMinutes Int
+    deriving Show Eq Ord Generic
+Topic json
+    description String
+    typ TopicType
+    deriving Show Eq Generic
+Timeslots
+    roomId RoomId
+    blockId BlockId
+    topicId TopicId
+    Timeslot roomId blockId
+    deriving Show Eq
+Snapshot
+    timestamp UTCTime
+    events [Event]
+    deriving Show Eq

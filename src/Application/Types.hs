@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE FlexibleInstances          #-}
 
 module Application.Types where
 
@@ -9,46 +10,10 @@ import qualified Data.Map               as M
 import           Data.Time.Clock        (UTCTime)
 import           GHC.Generics
 import           Yesod
+import           Database.Persist.Quasi
 
-
-type Capacity = Int
-
-share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
-Room
-    name String
-    capacity Capacity Maybe
-    deriving Show Eq Ord Generic
-Block
-    description String
-    startHours Int
-    startMinutes Int
-    endHours Int
-    endMinutes Int
-    deriving Show Eq Ord Generic
-Topic
-    description String
-    typ TopicType
-    deriving Show Eq Generic
-Timeslots
-    roomId RoomId
-    blockId BlockId
-    topicId TopicId
-    Timeslot roomId blockId
-    deriving Show Eq
-Snapshot
-    timestamp UTCTime
-    events [Event]
-    deriving Show Eq
-|]
-
-instance ToJSON Room
-instance FromJSON Room
-
-instance ToJSON Block
-instance FromJSON Block
-
-instance ToJSON Topic
-instance FromJSON Topic
+share [mkPersist sqlSettings, mkMigrate "migrateAll"]
+  $(persistFileWith lowerCaseSettings "config/model")
 
 data Slot = Slot
   { room  :: Room

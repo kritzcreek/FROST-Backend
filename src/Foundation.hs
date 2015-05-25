@@ -34,16 +34,4 @@ instance YesodPersist App where
         App pool _ _ <- getYesod
         runSqlPool action pool
 
-mkYesodData "App" [parseRoutes|
-/rooms                      RoomsR     GET POST
-/blocks                     BlocksR    GET POST
-/rooms/#RoomId              RoomR      GET POST
-/blocks/#BlockId            BlockR     GET POST
-/admin/#InstanceId          AdminR     GET
-/instances                  InstancesR GET POST
-/instance/#InstanceId       InstanceR  GET
-/instance/mobile/#InstanceId       InstanceMobileR  GET
-/admin/snapshot/#InstanceId SnapshotR  GET POST
-/socket/#InstanceId         SocketR
-!/instance                  StaticR Static getStatic
-|]
+mkYesodData "App" $(parseRoutesFile "config/routes")
