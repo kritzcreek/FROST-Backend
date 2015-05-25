@@ -5,9 +5,8 @@ import           Control.Applicative
 import           Control.Concurrent.STM
 import           Handler.Instances (keys)
 import qualified Data.Text           as T
-import           Data.Time.Format    (formatTime)
+import           Data.Time.Format    (formatTime, defaultTimeLocale)
 import           Import
-import           System.Locale       (defaultTimeLocale)
 
 instance RenderMessage App FormMessage where
     renderMessage _ _ = defaultFormMessage
