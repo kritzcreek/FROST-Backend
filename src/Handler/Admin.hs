@@ -15,7 +15,7 @@ loadSnapshotFormA :: AForm Handler AdminCommand
 loadSnapshotFormA = LoadSnapshot <$> areq (selectField options) "Lade Snapshot" Nothing
   where formatTimestamp = T.pack . formatTime defaultTimeLocale "%d.%m.%Y, %H:%M:%S"
         options = optionsPersistKey [] [Desc SnapshotTimestamp ,LimitTo 5]
-          (\k -> formatTimestamp (snapshotTimestamp k))
+          (formatTimestamp . snapshotTimestamp)
 loadSnapshotForm :: Html -> MForm Handler (FormResult AdminCommand, Widget)
 loadSnapshotForm = do
     renderDivs loadSnapshotFormA

@@ -26,7 +26,7 @@ getBroadcastChannel = getFromSocketstate broadcastChan
 getFromSocketstate ::(SocketState -> a) ->  InstanceId -> Handler a
 getFromSocketstate accessor instanceId = do
   App _ states _ <- getYesod
-  sts <- liftIO $ atomically $ M.lookup instanceId <$> (readTVar states)
+  sts <- liftIO $ atomically $ M.lookup instanceId <$> readTVar states
   maybe lookupError return (accessor <$> sts)
   where lookupError = sendResponseStatus status404 ("Instance doesn't exist" :: T.Text)
 
