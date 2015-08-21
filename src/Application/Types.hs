@@ -10,6 +10,10 @@ import qualified Data.Map               as M
 import           Data.Time.Clock        (UTCTime)
 import           GHC.Generics
 import           Yesod
+import           Data.Text (Text ())
+import           Data.ByteString.Lazy
+import           Control.Concurrent.STM
+import Control.Applicative
 import           Database.Persist.Quasi
 
 share [mkPersist sqlSettings, mkMigrate "migrateAll"]
@@ -22,9 +26,6 @@ data Slot = Slot
 
 instance FromJSON Slot
 instance ToJSON Slot
-
-data AdminCommand = PersistSnapshot | LoadSnapshot SnapshotId
-  deriving (Show, Eq, Generic)
 
 data Action = Event | Command
 
@@ -57,6 +58,19 @@ data AppState = AppState { topics    :: [Topic]
                          , timeslots :: M.Map Slot Topic
                          }
               deriving(Show, Eq, Generic)
+
+newtype InstanceId = InstanceId Text deriving(Show, Eq, Ord, Read)
+instance PathPiece InstanceId where
+  toPathPiece (InstanceId iid) = toPathPiece iid
+  fromPathPiece iid = InstanceId <$> fromPathPiece iid
+
+
+data SocketState = SocketState { appState :: TVar AppState,  broadcastChan :: TChan ByteString }
+
+type SocketStates = M.Map InstanceId SocketState
+
+data AdminCommand = PersistSnapshot InstanceId | LoadSnapshot SnapshotId InstanceId
+  deriving (Show, Eq, Generic)
 
 emptyState :: AppState
 emptyState = AppState [] [] [] M.empty

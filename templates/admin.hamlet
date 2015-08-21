@@ -1,0 +1,31 @@
+<div class="ui two column grid container">
+    <div .row>
+        <h1 class="ui dividing header"> Administration
+    <div class="two column row">
+      <div .column>
+        <div .ui .section>
+          <form method=get action=@{SnapshotR} enctype=#{enctype} class="ui form">
+            <h4 class="ui dividing header"> Snapshots Laden
+            ^{widget}
+            <button class="ui black labeled icon button">
+                Laden
+                <i class="arrow up icon">
+      <div .column>
+        <form method=post action=@{SnapshotR} enctype=#[newSnapshotEnctype] class="ui form">
+          <h4 class="ui dividing header"> Snapshots speichern
+          ^{newSnapshotWidget}
+          <button class="ui black labeled icon button">
+            Speichern
+            <i class="save icon">
+    <.row>
+      <.column .sixteen .wide>
+        <h2 class="ui header"> Instances
+        <.ui .selection .divided .list>
+          $forall key <- keys
+            <.item>
+              <.content>
+                <h3> <a href=@{InstanceR (InstanceId key)}>#{key}
+                <button class="ui button negative"> Delete (Later Prolly)
+  <form method=post action=@{InstancesR} class="ui form">
+    <button class="ui button positive"> Create new Instance
+  

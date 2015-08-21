@@ -3,7 +3,7 @@ module Handler.Instances
 , postInstancesR
 , getInstanceR
 , getInstanceMobileR
-, keys
+, getAllKeys
 , unwrap) where
 
 import           Application.Types
@@ -32,13 +32,13 @@ initNewInstance application iid = do
 unwrap :: InstanceId -> Text
 unwrap (InstanceId iid) = iid
 
-keys :: App -> STM [Text]
-keys app = return . map unwrap . M.keys =<< readTVar (socketStates app)
+getAllKeys :: App -> Handler [Text]
+getAllKeys app = liftIO . atomically $ return . map unwrap . M.keys =<< readTVar (socketStates app)
 
 getInstancesR :: Handler Value
 getInstancesR = do
   application <- getYesod
-  ks <- liftIO $ atomically $ keys application
+  ks <- getAllKeys application
   return $ toJSON ks
 
 -- TODO: Think hard about this
@@ -54,7 +54,7 @@ postInstancesR = do
 getInstance :: FilePath -> InstanceId -> Handler Html
 getInstance path instanceId = do
   application <- getYesod
-  ks <- liftIO $ atomically $ keys application
+  ks <- getAllKeys application
   if unwrap instanceId `elem` ks
     then sendFile "text/html" $ "static" </> path </> "index.html"
     else sendResponseStatus status404 ("Instance doesn't exist" :: Text)

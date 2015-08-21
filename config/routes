@@ -2,10 +2,10 @@
 /blocks                     BlocksR    GET POST
 /rooms/#RoomId              RoomR      GET POST
 /blocks/#BlockId            BlockR     GET POST
-/admin/#InstanceId          AdminR     GET
+/admin                      AdminR     GET
 /instance                   InstancesR GET POST
 /instance/#InstanceId       InstanceR  GET
 /instance/mobile/#InstanceId       InstanceMobileR  GET
-/admin/snapshot/#InstanceId SnapshotR  GET POST
+/admin/snapshot             SnapshotR  GET POST
 /socket/#InstanceId         SocketR
 !/instance                  StaticR Static getStatic
