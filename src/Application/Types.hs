@@ -82,7 +82,7 @@ myBlock = Block "Morgens" 9 0 12 0
 mySlot :: Slot
 mySlot = Slot myRoom myBlock
 myTopic :: Topic
-myTopic = Topic "Ein Thema" Presentation
+myTopic = Topic "Ein Thema" Presentation "Christoph"
 myEvent :: Event
 myEvent = AssignTopic mySlot myTopic
 myState :: AppState

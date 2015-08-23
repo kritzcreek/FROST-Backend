@@ -12,6 +12,7 @@ Block json
 Topic json
     description String
     typ TopicType
+    host String
     deriving Show Eq Generic
 Timeslots
     roomId RoomId
